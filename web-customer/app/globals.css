@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #0C831F;
+  --color-brand-dark: #096317;
+  --color-brand-light: #E6F3E8;
+  --color-brand-accent: #FFD700;
+
+  --color-slate-50: #F5F7FD;
+
+  --animate-slide-up: slideUp 0.3s ease-out;
+
+  @keyframes slideUp {
+    0% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/*
+  In Tailwind v4, we can usually just use classes directly, 
+  but for @apply to work in custom classes, the import must make them available.
+*/
+
+:root {
+  --foreground: #1e1e1e;
+  --background: #f4f6fb;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 
+  Using @apply in v4 requires caution or ensuring proper scope.
+  For now, let's write brand-card using standard CSS + utility composition or just use utilities in HTML.
+  But attempting to fix the error:
+*/
+.brand-card {
+  background-color: white;
+  border-radius: 0.75rem;
+  /* rounded-xl */
+  border: 1px solid #f1f5f9;
+  /* border-slate-100 */
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  /* shadow-sm */
+}
