@@ -14,17 +14,20 @@ export default function StoreLogin() {
         e.preventDefault();
         setLoading(true);
 
-        // For Phase 2 Demo: We can simulate login or use Supabase
-        // If using Supabase, we need to have created a user with role 'store_manager'
-        // Let's assume there is one.
+        const supabase = createClient();
 
-        // For now, simple client-side check to unblock
-        if (email.includes('@vegfrash.com') && password.length > 5) {
-            // Mock Success
-            document.cookie = "store_auth=true; path=/";
-            router.push('/orders');
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            alert("Login Failed: " + error.message);
         } else {
-            alert("Invalid Store Credentials");
+            // Successful login
+            // Router refresh to update middleware/server components
+            router.refresh();
+            router.push('/');
         }
         setLoading(false);
     };

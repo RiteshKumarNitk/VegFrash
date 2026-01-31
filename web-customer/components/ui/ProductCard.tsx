@@ -1,18 +1,19 @@
 'use client';
 import { useCart } from '@/context/CartContext';
-import { useState, useEffect } from 'react';
+import { Clock, Minus, Plus } from 'lucide-react';
 
 type ProductProps = {
-    id?: string; // Made optional for now, but will fallback to name as ID if missing (for demo)
+    id?: string;
     name: string;
     weight: string;
     price: number;
     oldPrice?: number;
     image?: string;
     isAd?: boolean;
+    inStock?: boolean;
 };
 
-export default function ProductCard({ id, name, weight, price, oldPrice, image, isAd }: ProductProps) {
+export default function ProductCard({ id, name, weight, price, oldPrice, image, isAd, inStock = true }: ProductProps) {
     const { items, addItem, removeItem, updateQuantity } = useCart();
 
     // Use name as ID for demo if real ID missing
@@ -37,68 +38,71 @@ export default function ProductCard({ id, name, weight, price, oldPrice, image, 
     };
 
     const handleDecrement = () => {
-        if (count > 1) {
-            updateQuantity(productId, -1);
-        } else {
-            removeItem(productId);
-        }
+        if (count > 1) updateQuantity(productId, -1);
+        else removeItem(productId);
     };
 
     return (
-        <div className="brand-card p-3 flex flex-col relative group h-full justify-between hover:shadow-md transition-shadow">
-            {isAd && (
-                <span className="absolute top-2 left-2 bg-slate-800 text-[10px] text-white px-1.5 py-0.5 rounded opacity-50 z-10">
-                    AD
-                </span>
-            )}
-
-            {/* Clickable Area navigating to Product Page */}
-            <a href={`/product/${productId}`} className="flex-1 flex flex-col w-full cursor-pointer">
-                {/* Image Area */}
-                <div className="w-full aspect-square bg-slate-50 rounded-lg mb-3 flex items-center justify-center relative overflow-hidden group-hover:scale-105 transition-transform duration-300">
-                    <span className="text-4xl select-none">{image || '🥬'}</span>
-                </div>
-
-                {/* Details */}
-                <div className="flex-1 flex flex-col items-start w-full">
-                    <div className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-bold text-slate-600 mb-1 select-none">
-                        ⚡ 8 MINS
+        <div className="bg-white rounded-xl p-3 flex flex-col gap-2 h-full border border-slate-100 shadow-sm relative overflow-hidden group">
+            {/* Image Area */}
+            <div className="aspect-square bg-slate-50 rounded-lg flex items-center justify-center text-5xl mb-1 relative overflow-hidden">
+                {image?.startsWith('http') ? (
+                    <img
+                        src={image}
+                        alt={name}
+                        className="w-full h-full object-cover mix-blend-multiply"
+                        loading="lazy"
+                    />
+                ) : (
+                    <span>{image}</span>
+                )}
+                {!inStock && (
+                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center backdrop-blur-[1px] rounded-lg">
+                        <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">OUT OF STOCK</span>
                     </div>
-                    <h3 className="font-semibold text-sm text-slate-800 leading-tight mb-1 line-clamp-2 hover:text-brand transition-colors" title={name}>
-                        {name}
-                    </h3>
-                    <p className="text-xs text-slate-500 mb-3">{weight}</p>
-                </div>
-            </a>
+                )}
+            </div>
 
-            {/* Footer: Price & Add Button */}
-            <div className="flex items-center justify-between w-full mt-auto">
+            {/* Time Badge (Mock) */}
+            <div className="flex items-center gap-1 bg-slate-100 self-start px-1.5 py-0.5 rounded-[4px]">
+                <Clock size={10} className="text-slate-500" />
+                <span className="text-[10px] font-bold text-slate-600">12 MINS</span>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1">
+                <h3 className="font-bold text-slate-800 text-sm leading-tight line-clamp-2 min-h-[2.5em]">{name}</h3>
+                <p className="text-xs text-slate-400 mt-1">{weight}</p>
+            </div>
+
+            {/* Price & Action */}
+            <div className="flex items-end justify-between mt-2">
                 <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-800">₹{price}</span>
-                    {oldPrice && (
-                        <span className="text-[10px] text-slate-400 line-through">₹{oldPrice}</span>
-                    )}
+                    <span className="text-xs text-slate-400 line-through">₹{oldPrice || Math.round(price * 1.2)}</span>
+                    <span className="font-bold text-slate-800">₹{price}</span>
                 </div>
 
-                {/* Add Button Logic */}
-                {count === 0 ? (
+                {/* Smart Button */}
+                {!inStock ? (
+                    <button disabled className="text-xs font-bold text-slate-300 border border-slate-200 px-4 py-1.5 rounded-lg">
+                        SOLD
+                    </button>
+                ) : count === 0 ? (
                     <button
                         onClick={handleAdd}
-                        className="px-4 py-1.5 rounded-lg border border-brand/50 text-brand bg-brand-light text-sm font-bold shadow-sm uppercase active:scale-95 transition-transform"
+                        className="bg-red-50 text-red-600 border border-red-100 font-bold text-sm px-5 py-1.5 rounded-lg uppercase shadow-sm active:scale-95 transition-transform"
                     >
                         ADD
                     </button>
                 ) : (
-                    <div className="flex items-center bg-brand rounded-lg text-white h-8 shadow-sm animate-in zoom-in duration-200">
-                        <button
-                            onClick={handleDecrement}
-                            className="px-2.5 h-full font-bold hover:bg-brand-dark rounded-l-lg active:bg-brand-dark"
-                        >-</button>
-                        <span className="text-xs font-bold min-w-[20px] text-center">{count}</span>
-                        <button
-                            onClick={handleIncrement}
-                            className="px-2.5 h-full font-bold hover:bg-brand-dark rounded-r-lg active:bg-brand-dark"
-                        >+</button>
+                    <div className="flex items-center bg-green-600 text-white rounded-lg h-9 shadow-md animate-scale-in overflow-hidden">
+                        <button onClick={handleDecrement} className="w-8 h-full flex items-center justify-center hover:bg-black/20 active:bg-black/40 transition-colors">
+                            <Minus size={14} strokeWidth={3} />
+                        </button>
+                        <span className="text-sm font-bold w-4 text-center">{count}</span>
+                        <button onClick={handleIncrement} className="w-8 h-full flex items-center justify-center hover:bg-black/20 active:bg-black/40 transition-colors">
+                            <Plus size={14} strokeWidth={3} />
+                        </button>
                     </div>
                 )}
             </div>

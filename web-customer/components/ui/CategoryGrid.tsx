@@ -2,34 +2,24 @@
 
 // Placeholder for images - In production these would be high-res CDN links
 // Mapped to resemble Blinkit's categories
-const CATEGORIES = [
-    { name: 'Paan Corner', image: '🍃', color: '#dcfce7' },
-    { name: 'Dairy, Bread & Eggs', image: '🥛', color: '#f3e8ff' },
-    { name: 'Fruits & Vegetables', image: '🥕', color: '#dcfce7' },
-    { name: 'Cold Drinks & Juices', image: '🥤', color: '#e0f2fe' },
-    { name: 'Snacks & Munchies', image: '🍟', color: '#fef3c7' },
-    { name: 'Breakfast & Instant Food', image: '🥣', color: '#ffedd5' },
-    { name: 'Sweet Tooth', image: '🍫', color: '#fce7f3' },
-    { name: 'Bakery & Biscuits', image: '🍪', color: '#f1f5f9' },
-    { name: 'Tea, Coffee & Health Drinks', image: '☕', color: '#fee2e2' },
-    { name: 'Atta, Rice & Dal', image: '🍚', color: '#fae8ff' },
-];
 
-export default function CategoryGrid() {
+export default function CategoryGrid({ categories }: { categories: any[] }) {
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-            {CATEGORIES.map((cat, idx) => (
-                <a key={idx} href={`/category/${cat.name.split(',')[0].toLowerCase().trim()}`} className="cursor-pointer group flex flex-col gap-2">
+        <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 md:gap-4">
+            {categories.map((cat, idx) => (
+                <a key={idx} href={`/category/${cat.slug}`} className="cursor-pointer group flex flex-col gap-2 transition-transform hover:-translate-y-1 duration-300">
                     <div
-                        className="aspect-[4/5] rounded-xl flex items-center justify-center text-5xl shadow-sm border border-transparent group-hover:border-brand transition-all relative overflow-hidden"
+                        className="aspect-[4/5] rounded-xl flex items-center justify-center text-5xl shadow-sm group-hover:shadow-md border border-slate-100/50 group-hover:border-brand/30 transition-all relative overflow-hidden"
                         style={{ backgroundColor: cat.color }}
                     >
-                        {/* <Image /> would go here */}
-                        <span className="scale-100 group-hover:scale-110 transition-transform duration-300">
+                        <span className="scale-100 group-hover:scale-110 transition-transform duration-500 filter drop-shadow-sm">
                             {cat.image}
                         </span>
+
+                        {/* Shine effect on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                     </div>
-                    <span className="text-[13px] font-semibold text-center text-slate-700 leading-tight">
+                    <span className="text-[13px] font-semibold text-center text-slate-700 leading-tight group-hover:text-brand transition-colors">
                         {cat.name}
                     </span>
                 </a>
