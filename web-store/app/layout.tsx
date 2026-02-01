@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google"; // Using Inter for Admin dashboard (cleaner)
+import { Toaster } from "sonner";
 import "./globals.css";
 
 
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-slate-50 min-h-screen`}>
         {children}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

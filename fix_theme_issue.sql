@@ -19,6 +19,8 @@ create policy "Public read access"
   using (true);
 
 -- Allow ADMINS to edit (so you can save changes)
+-- WARNING: This policy allows ANY authenticated user to edit settings.
+-- For production, you should restrict this to specific user IDs or a generic 'admin' role.
 create policy "Admin full access"
   on site_settings for all
   to authenticated

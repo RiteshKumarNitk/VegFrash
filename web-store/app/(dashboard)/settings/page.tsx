@@ -1,20 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import {
     Store, Clock, ShieldCheck, Bell, CreditCard, Palette,
     Save, Loader2
 } from 'lucide-react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
+    const supabase = createClient();
     const [activeTab, setActiveTab] = useState('store');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [fetchError, setFetchError] = useState<any>(null);
+    const [rawData, setRawData] = useState<any>(null);
 
     // Settings Data State
     const [settings, setSettings] = useState<any>({
@@ -36,7 +37,20 @@ export default function SettingsPage() {
 
     const fetchSettings = async () => {
         setLoading(true);
+
+        // Check User
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUser(user);
+
+        // Fetch Data
         const { data, error } = await supabase.from('site_settings').select('*');
+        setRawData(data);
+
+        if (error) {
+            console.error('Fetch error:', error);
+            setFetchError(error);
+        }
+
         if (data) {
             const newSettings: any = { ...settings };
             data.forEach((row: any) => {
@@ -59,13 +73,21 @@ export default function SettingsPage() {
             { key: 'theme_config', value: settings.theme },
         ];
 
+        let hasError = false;
         for (const update of updates) {
-            await supabase.from('site_settings').upsert(update, { onConflict: 'key' });
+            const { error } = await supabase.from('site_settings').upsert(update, { onConflict: 'key' });
+            if (error) {
+                console.error('Save error:', error);
+                hasError = true;
+            }
         }
 
-        // Simulate waiting for effect
-        setTimeout(() => setSaving(false), 800);
-        // Toast logic would go here
+        setSaving(false);
+        if (hasError) {
+            toast.error('Failed to save settings. Please try again.');
+        } else {
+            toast.success('Settings saved successfully');
+        }
     };
 
     // Helper to update specific section
@@ -346,6 +368,25 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 )}
+
+                {/* DEBUG SECTION */}
+                <div className="mt-12 p-4 bg-gray-100 rounded-lg border border-gray-300 text-xs font-mono opacity-70 hover:opacity-100 transition-opacity">
+                    <h3 className="font-bold mb-2 text-red-600 uppercase">Values Debugger (Temporary)</h3>
+                    <div className="space-y-1">
+                        <div><strong>Auth State:</strong> {loading ? 'Loading...' : (currentUser ? `Logged In (${currentUser.email})` : 'NOT LOGGED IN (GUEST)')}</div>
+                        <div><strong>User ID:</strong> {currentUser?.id || 'N/A'}</div>
+                        <div><strong>DB Fetch Error:</strong> {fetchError ? JSON.stringify(fetchError) : 'None'}</div>
+                        <div><strong>DB Raw Data Rows:</strong> {rawData ? rawData.length : 'null'}</div>
+                        <div className="font-bold mt-2">DB Raw Content:</div>
+                        <pre className="text-[10px] bg-white p-2 border rounded overflow-x-auto h-24">
+                            {JSON.stringify(rawData, null, 2)}
+                        </pre>
+                        <div className="font-bold mt-2">Current Theme Config (Memory):</div>
+                        <pre className="text-[10px] bg-white p-2 border rounded overflow-x-auto">
+                            {JSON.stringify(settings.theme, null, 2)}
+                        </pre>
+                    </div>
+                </div>
 
             </div>
         </div>
