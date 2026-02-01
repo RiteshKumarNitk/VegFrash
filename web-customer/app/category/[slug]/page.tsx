@@ -1,34 +1,95 @@
-import Header from "@/components/ui/Header";
+import ModernHeader from "@/components/ui/ModernHeader";
 import ProductCard from "@/components/ui/ProductCard";
 import { getDeviceType } from "@/lib/device";
+import { createClient } from "@supabase/supabase-js";
 
-// Mock Data Source - In production this fetches from Supabase
-const PRODUCTS = [
-    { name: 'Red Onion (Pyaz)', weight: '1 kg', price: 42, oldPrice: 60, image: '🧅', category: 'vegetables' },
-    { name: 'Potato (Aloo)', weight: '1 kg', price: 35, oldPrice: 40, image: '🥔', category: 'vegetables' },
-    { name: 'Tomato (Hybrid)', weight: '500 g', price: 18, oldPrice: 24, image: '🍅', category: 'vegetables' },
-    { name: 'Cucumber (Kheera)', weight: '500 g', price: 24, image: '🥒', category: 'vegetables' },
-    { name: 'Amul Taaza Milk', weight: '500 ml', price: 27, oldPrice: 30, image: '🥛', category: 'dairy' },
-    { name: 'Nandini GoodLife', weight: '500 ml', price: 28, image: '🥛', category: 'dairy' },
-];
+export const revalidate = 0; // Disable cache for demo purposes
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const decodedSlug = decodeURIComponent(slug);
     const deviceType = await getDeviceType();
 
-    // Filter products by slug (mock query)
-    // In real app: const data = await supabase.from('products').select().eq('category', slug)
-    const categoryProducts = PRODUCTS.filter(p =>
-        decodedSlug === 'all' || p.category.includes(decodedSlug.toLowerCase()) || decodedSlug.toLowerCase().includes(p.category) || decodedSlug === 'vegetables'
+    // Init Supabase
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // Extend list for demo visual
-    const displayProducts = [...categoryProducts, ...categoryProducts, ...categoryProducts];
+    // --- DATA RESOLUTION ---
+    let displayProducts: any[] = [];
+    let categoryName = decodedSlug;
+
+    // Strategy: Determine Category ID first, then fetch products.
+    // 1. Exact Match or Mapped Match or Fuzzy
+    let catData = null;
+
+    if (decodedSlug !== 'all') {
+        const slugMap: Record<string, string> = {
+            'vegetables': 'fruits-vegetables',
+            'fruits': 'fruits-vegetables',
+            'veggies': 'fruits-vegetables'
+        };
+
+        // 1. Try Exact Match First (Priority)
+        const { data: exact } = await supabase
+            .from('categories')
+            .select('id, name')
+            .ilike('slug', decodedSlug)
+            .maybeSingle();
+
+        if (exact) {
+            catData = exact;
+        } else {
+            // 2. Try Mapped Match (Alias)
+            const mappedSlug = slugMap[decodedSlug.toLowerCase()];
+            if (mappedSlug) {
+                const { data: mapped } = await supabase
+                    .from('categories')
+                    .select('id, name')
+                    .ilike('slug', mappedSlug)
+                    .maybeSingle();
+                catData = mapped;
+            }
+        }
+
+        // 3. Fallback to Fuzzy if still nothing
+        if (!catData) {
+            const cleanSlug = decodedSlug.replace(/-/g, ' ').split(' ')[0];
+            const { data: fuzzy } = await supabase
+                .from('categories')
+                .select('id, name')
+                .ilike('slug', `%${cleanSlug}%`)
+                .limit(1)
+                .maybeSingle();
+            catData = fuzzy;
+        }
+    }
+
+    // --- FETCH PRODUCTS ---
+    if (catData) {
+        // Safe access now
+        categoryName = catData.name;
+
+        const { data } = await supabase
+            .from('products')
+            .select('*')
+            .eq('is_visible', true)
+            .eq('category_id', catData.id);
+        displayProducts = data || [];
+    } else if (decodedSlug === 'all') {
+        const { data } = await supabase.from('products').select('*').eq('is_visible', true);
+        displayProducts = data || [];
+        categoryName = "All Products";
+    }
+
+    // Client-side filtering as backup if specific logic needed (e.g. reserving stock calc)
+    // Note: displayProducts is explicitly array now
+    displayProducts = displayProducts.filter((p: any) => (p.total_stock - p.reserved_stock) > 0);
 
     return (
         <main className="min-h-screen bg-white pb-20">
-            <Header deviceType={deviceType} />
+            <ModernHeader deviceType={deviceType} />
 
             <div className={`
          ${deviceType === 'desktop' ? 'max-w-[1280px] mx-auto pt-6 px-4 lg:px-0' : 'px-4 pt-4'}
@@ -36,18 +97,24 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                 {/* Breadcrumb / Title */}
                 <div className="mb-6">
                     <h1 className="text-2xl font-extrabold capitalize text-slate-800">
-                        {decodedSlug}
+                        {categoryName}
                     </h1>
-                    <p className="text-sm text-slate-500">Fresh {decodedSlug} delivered in 10 minutes</p>
+                    <p className="text-sm text-slate-500">Fresh {categoryName} delivered in 10 minutes</p>
                 </div>
 
                 {/* Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {displayProducts.map((p, i) => (
-                        <div key={i}>
-                            <ProductCard {...p} id={`${slug}-${i}`} />
+                        <div key={p.id || i}>
+                            <ProductCard {...p} />
                         </div>
                     ))}
+                    {displayProducts.length === 0 && (
+                        <div className="col-span-full py-20 text-center text-gray-400">
+                            <p>No fresh items found in {decodedSlug}.</p>
+                            <a href="/" className="text-brand font-bold mt-2 inline-block">Browse All</a>
+                        </div>
+                    )}
                 </div>
             </div>
         </main>

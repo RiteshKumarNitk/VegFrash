@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase'; // Access shared or local supabase lib
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 // Hardcoded for demo or use Real Auth
 export default function StoreLogin() {
@@ -68,6 +69,12 @@ export default function StoreLogin() {
                     >
                         {loading ? 'Verifying...' : 'ACCESS DASHBOARD'}
                     </button>
+
+                    <div className="text-center pt-4">
+                        <Link href="/signup" className="text-slate-400 hover:text-white text-sm">
+                            Need an account? Register
+                        </Link>
+                    </div>
                 </form>
             </div>
         </div>

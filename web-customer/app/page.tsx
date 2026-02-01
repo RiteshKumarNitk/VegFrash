@@ -17,27 +17,30 @@ export default async function Home() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  // Fetch all visible products and categories
   const [productsRes, categoriesRes] = await Promise.all([
-    supabase.from('products').select('*'),
+    supabase.from('products').select('*').eq('is_visible', true),
     supabase.from('categories').select('*').order('name')
   ]);
 
-  const featured = productsRes.data || [];
+  const products = productsRes.data || [];
   const categories = categoriesRes.data || [];
 
-  // Filter for sections (using category names or slugs if possible, simplified here)
-  const vegetables = featured.filter(p => p.category_id && categories.find(c => c.id === p.category_id)?.slug === 'fruits-vegetables');
-  // For demo if slugs aren't perfectly matched or if category_id usage is tricky in pure SQL without join,
-  // we might want to fetch with join. But for now let's do a simple client-side filter or loose filter.
-  // Actually, let's fetch products with categories joined to make it easier filtering.
+  // Group products by category_id
+  const productsByCategory: Record<string, any[]> = {};
 
-  // Re-fetch with join for easier filtering
-  const { data: productsWithCats } = await supabase.from('products').select('*, categories(slug)');
+  products.forEach((p) => {
+    // Only show available products
+    if ((p.total_stock - p.reserved_stock) > 0) {
+      if (!productsByCategory[p.category_id]) {
+        productsByCategory[p.category_id] = [];
+      }
+      productsByCategory[p.category_id].push(p);
+    }
+  });
 
-  const allProducts = productsWithCats || [];
-  const vegProducts = allProducts.filter((p: any) => ['vegetables', 'fruits-vegetables'].includes(p.categories?.slug));
-  const fruitProducts = allProducts.filter((p: any) => p.categories?.slug === 'fruits');
-  const dailyProducts = allProducts.filter((p: any) => !['vegetables', 'fruits', 'fruits-vegetables'].includes(p.categories?.slug));
+  // Filter categories to only those that have products
+  const activeCategories = categories.filter(c => productsByCategory[c.id]?.length > 0);
 
   return (
     <main className={`min-h-screen bg-white pb-24`}>
@@ -52,74 +55,61 @@ export default async function Home() {
           <FestivalBanner />
         </section>
 
-        {/* Categories */}
+        {/* Categories Grid */}
         <section className={`${deviceType === 'mobile' ? 'px-4' : ''}`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-extrabold text-lg lg:text-xl text-slate-800">Shop by Category</h2>
           </div>
-          <CategoryGrid categories={categories} />
+          <CategoryGrid categories={[{ id: 'all', name: 'All Items', slug: 'all', image: '🛍️', color: '#ffedd5' }, ...categories]} />
         </section>
 
-        {/* Products Row 1: Vegetables */}
-        {/* Products Row 1: Vegetables */}
-        <section className={`${deviceType === 'mobile' ? 'pl-4' : ''}`}>
-          <div className="flex items-center justify-between mb-4 pr-4">
-            <h2 className="font-extrabold text-lg lg:text-2xl text-slate-800">Farm Fresh Veggies</h2>
-            {deviceType === 'desktop' && <a href="/category/vegetables" className="text-brand font-bold cursor-pointer hover:underline text-sm">see all</a>}
-          </div>
+        {/* Dynamic Product Sections */}
+        {activeCategories.map((category) => (
+          <section key={category.id} className={`${deviceType === 'mobile' ? 'pl-4' : ''}`}>
+            <div className="flex items-center justify-between mb-4 pr-4">
+              <h2 className="font-extrabold text-lg lg:text-2xl text-slate-800">{category.name}</h2>
+              {deviceType === 'desktop' && (
+                <a href={`/category/${category.slug}`} className="text-brand font-bold cursor-pointer hover:underline text-sm">
+                  see all
+                </a>
+              )}
+            </div>
 
-          <div className={`
-                flex gap-4 
-                ${deviceType === 'mobile' ? 'overflow-x-auto no-scrollbar pb-4 pr-4' : 'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6'}
-             `}>
-            {vegProducts.map((item: any, i: number) => (
-              <div key={i} className={`${deviceType === 'mobile' ? 'min-w-[150px] w-[150px]' : 'w-full'}`}>
+            <div className={`
+                    flex gap-4 
+                    ${deviceType === 'mobile' ? 'overflow-x-auto no-scrollbar pb-4 pr-4' : 'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6'}
+                 `}>
+              {productsByCategory[category.id]?.slice(0, 6).map((item: any, i: number) => (
+                <div key={i} className={`${deviceType === 'mobile' ? 'min-w-[150px] w-[150px]' : 'w-full'}`}>
+                  <ProductCard {...item} />
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {/* ALL PRODUCTS SECTION */}
+        <section className={`${deviceType === 'mobile' ? 'px-4' : ''}`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-extrabold text-lg lg:text-2xl text-slate-800">All Products</h2>
+            <a href="/category/all" className="text-brand font-bold cursor-pointer hover:underline text-sm">
+              View Full Catalog
+            </a>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {products.filter(p => (p.total_stock - p.reserved_stock) > 0).map((item: any, i: number) => (
+              <div key={i} className="w-full">
                 <ProductCard {...item} />
               </div>
             ))}
-            {vegProducts.length === 0 && <p className="text-slate-400 text-sm">No vegetables in stock.</p>}
           </div>
         </section>
 
-        {/* Products Row 2: Fruits */}
-        <section className={`${deviceType === 'mobile' ? 'pl-4' : ''}`}>
-          <div className="flex items-center justify-between mb-4 pr-4">
-            <h2 className="font-extrabold text-lg lg:text-2xl text-slate-800">Fresh Fruits</h2>
-            {deviceType === 'desktop' && <a href="/category/fruits" className="text-brand font-bold cursor-pointer hover:underline text-sm">see all</a>}
+        {activeCategories.length === 0 && (
+          <div className="text-center py-20 text-gray-400">
+            <p>No products available at the moment.</p>
           </div>
-
-          <div className={`
-                flex gap-4 
-                ${deviceType === 'mobile' ? 'overflow-x-auto no-scrollbar pb-4 pr-4' : 'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6'}
-                `}>
-            {fruitProducts.map((item: any, i: number) => (
-              <div key={i} className={`${deviceType === 'mobile' ? 'min-w-[150px] w-[150px]' : 'w-full'}`}>
-                <ProductCard {...item} />
-              </div>
-            ))}
-            {fruitProducts.length === 0 && <p className="text-slate-400 text-sm">No fruits in stock.</p>}
-          </div>
-        </section>
-
-        {/* Products Row 2: Daily Essentials */}
-        <section className={`${deviceType === 'mobile' ? 'pl-4' : ''}`}>
-          <div className="flex items-center justify-between mb-4 pr-4">
-            <h2 className="font-extrabold text-lg lg:text-2xl text-slate-800">Daily Essentials</h2>
-            {deviceType === 'desktop' && <span className="text-brand font-bold cursor-pointer text-sm">see all</span>}
-          </div>
-
-          <div className={`
-                flex gap-4 
-                ${deviceType === 'mobile' ? 'overflow-x-auto no-scrollbar pb-4 pr-4' : 'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6'}
-             `}>
-            {dailyProducts.map((item: any, i: number) => (
-              <div key={i} className={`${deviceType === 'mobile' ? 'min-w-[150px] w-[150px]' : 'w-full'}`}>
-                <ProductCard {...item} />
-              </div>
-            ))}
-            {dailyProducts.length === 0 && <p className="text-slate-400 text-sm">No items in stock.</p>}
-          </div>
-        </section>
+        )}
 
       </div>
       <CartSummary />

@@ -4,7 +4,7 @@ import { useCart } from '@/context/CartContext';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 
 export default function CartSummary() {
-    const { items, cartTotal } = useCart();
+    const { items, total } = useCart();
 
     if (items.length === 0) return null;
 
@@ -17,7 +17,7 @@ export default function CartSummary() {
                     <span className="text-xs font-medium text-brand-light uppercase tracking-wider flex items-center gap-1">
                         <ShoppingBag size={12} /> {itemCount} Items
                     </span>
-                    <span className="font-bold text-lg">₹{cartTotal}</span>
+                    <span className="font-bold text-lg">₹{total}</span>
                 </div>
 
                 <Link href="/cart" className="flex items-center gap-2 font-bold text-sm bg-white/10 px-4 py-2 rounded-lg border border-white/10 relative z-10 hover:bg-white/20 transition-colors group">

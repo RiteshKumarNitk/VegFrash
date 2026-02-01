@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google"; // Using Inter for Admin dashboard (cleaner)
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,11 +17,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-slate-50 flex min-h-screen`}>
-        <Sidebar />
-        <main className="flex-1 ml-64 p-8 overflow-y-auto h-screen">
-          {children}
-        </main>
+      <body className={`${inter.className} bg-slate-50 min-h-screen`}>
+        {children}
       </body>
     </html>
   );
