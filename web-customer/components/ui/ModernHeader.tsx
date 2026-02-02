@@ -50,8 +50,17 @@ export default function ModernHeader({ deviceType }: { deviceType: string }) {
                 .eq('key', 'theme_config')
                 .single();
 
-            if (themeData) {
-                setFestivalTheme(themeData.value);
+            if (themeData?.value) {
+                let parsed = themeData.value;
+                if (typeof themeData.value === 'string') {
+                    try {
+                        parsed = JSON.parse(themeData.value);
+                    } catch (e) {
+                        console.error('Failed to parse theme_config:', e);
+                        parsed = {};
+                    }
+                }
+                setFestivalTheme(parsed);
             }
         };
         init();

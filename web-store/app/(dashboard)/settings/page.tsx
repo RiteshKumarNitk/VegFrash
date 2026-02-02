@@ -54,13 +54,31 @@ export default function SettingsPage() {
         if (data) {
             const newSettings: any = { ...settings };
             data.forEach((row: any) => {
-                if (row.key === 'store_profile') newSettings.profile = { ...newSettings.profile, ...row.value };
-                if (row.key === 'operating_hours') newSettings.hours = { ...newSettings.hours, ...row.value };
-                if (row.key === 'order_rules') newSettings.rules = { ...newSettings.rules, ...row.value };
-                if (row.key === 'theme_config') newSettings.theme = { ...newSettings.theme, ...row.value };
+                // Safety: Parse value if it comes as a string (common if DB column is 'text' instead of 'jsonb')
+                let parsedValue = row.value;
+                if (typeof row.value === 'string') {
+                    try {
+                        parsedValue = JSON.parse(row.value);
+                    } catch (e) {
+                        console.error(`Failed to parse setting ${row.key}:`, e);
+                        parsedValue = {};
+                    }
+                }
+
+                if (row.key === 'store_profile') newSettings.profile = { ...newSettings.profile, ...parsedValue };
+                if (row.key === 'operating_hours') newSettings.hours = { ...newSettings.hours, ...parsedValue };
+                if (row.key === 'order_rules') newSettings.rules = { ...newSettings.rules, ...parsedValue };
+                if (row.key === 'theme_config') newSettings.theme = { ...newSettings.theme, ...parsedValue };
             });
             setSettings(newSettings);
         }
+
+        // --- DEBUG LOGS ---
+        console.log('[Settings] Auth User:', user?.email || 'Guest');
+        console.log('[Settings] DB Fetch Error:', error);
+        console.log('[Settings] DB Rows:', data?.length);
+        // ------------------
+
         setLoading(false);
     };
 
@@ -73,20 +91,37 @@ export default function SettingsPage() {
             { key: 'theme_config', value: settings.theme },
         ];
 
-        let hasError = false;
-        for (const update of updates) {
-            const { error } = await supabase.from('site_settings').upsert(update, { onConflict: 'key' });
-            if (error) {
-                console.error('Save error:', error);
-                hasError = true;
-            }
-        }
+        try {
+            // Use bulk save RPC for efficiency and to avoid parallel connection timeouts
+            const { error } = await supabase.rpc('save_site_settings_bulk', {
+                settings: updates
+            });
 
-        setSaving(false);
-        if (hasError) {
-            toast.error('Failed to save settings. Please try again.');
-        } else {
+            if (error) {
+                console.warn('Bulk save error, attempting fallback:', error);
+
+                // Fallback to individual saves for ANY error (RPC missing, timeout, or connection issue)
+                console.log('Falling back to sequential saves...');
+                let hasError = false;
+                for (const update of updates) {
+                    const { error: individualError } = await supabase.rpc('save_site_setting', {
+                        setting_key: update.key,
+                        setting_value: update.value
+                    });
+                    if (individualError) {
+                        console.error(`Error saving ${update.key}:`, individualError);
+                        hasError = true;
+                    }
+                }
+                if (hasError) throw new Error('Some settings failed to save');
+            }
+
             toast.success('Settings saved successfully');
+        } catch (error: any) {
+            console.error('Save operation failed:', error);
+            toast.error(error.message || 'Failed to save settings. Please try again.');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -369,24 +404,7 @@ export default function SettingsPage() {
                     </div>
                 )}
 
-                {/* DEBUG SECTION */}
-                <div className="mt-12 p-4 bg-gray-100 rounded-lg border border-gray-300 text-xs font-mono opacity-70 hover:opacity-100 transition-opacity">
-                    <h3 className="font-bold mb-2 text-red-600 uppercase">Values Debugger (Temporary)</h3>
-                    <div className="space-y-1">
-                        <div><strong>Auth State:</strong> {loading ? 'Loading...' : (currentUser ? `Logged In (${currentUser.email})` : 'NOT LOGGED IN (GUEST)')}</div>
-                        <div><strong>User ID:</strong> {currentUser?.id || 'N/A'}</div>
-                        <div><strong>DB Fetch Error:</strong> {fetchError ? JSON.stringify(fetchError) : 'None'}</div>
-                        <div><strong>DB Raw Data Rows:</strong> {rawData ? rawData.length : 'null'}</div>
-                        <div className="font-bold mt-2">DB Raw Content:</div>
-                        <pre className="text-[10px] bg-white p-2 border rounded overflow-x-auto h-24">
-                            {JSON.stringify(rawData, null, 2)}
-                        </pre>
-                        <div className="font-bold mt-2">Current Theme Config (Memory):</div>
-                        <pre className="text-[10px] bg-white p-2 border rounded overflow-x-auto">
-                            {JSON.stringify(settings.theme, null, 2)}
-                        </pre>
-                    </div>
-                </div>
+
 
             </div>
         </div>

@@ -1,17 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import {
   Package, Calendar, CheckCircle2, TrendingUp,
   AlertTriangle, ShoppingBag, Truck
 } from 'lucide-react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
 export default function DashboardPage() {
+  const supabase = createClient();
   const [metrics, setMetrics] = useState({
     newRequests: 0,
     scheduled: 0,
@@ -35,7 +32,7 @@ export default function DashboardPage() {
 
     // Fetch Data
     const [ordersRes, productsRes, settingsRes] = await Promise.all([
-      supabase.from('orders').select('id, status, total, created_at, scheduled_date, order_stage'),
+      supabase.from('orders').select('id, status, total_amount, created_at, scheduled_date, order_stage'),
       supabase.from('products').select('total_stock, reserved_stock'),
       supabase.from('site_settings').select('*').eq('key', 'store_profile').single()
     ]);
@@ -54,7 +51,7 @@ export default function DashboardPage() {
     const reservedStock = products.reduce((sum, p) => sum + (p.reserved_stock || 0), 0);
 
     // 3. Sales Metrics
-    const totalSales = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const totalSales = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
     setMetrics({
       newRequests,
@@ -141,7 +138,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="font-bold text-slate-900 text-sm">Order #{order.id.slice(0, 8)}</p>
-                    <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString()} • ₹{order.total}</p>
+                    <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString()} • ₹{order.total_amount}</p>
                   </div>
                 </div>
                 <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded border ${order.status === 'pending' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-slate-100 text-slate-600 border-slate-200'

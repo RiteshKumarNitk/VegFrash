@@ -1,16 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase';
 import {
     Plus, Search, Edit, Trash2,
     X, BarChart3, Tag, Package,
     AlertTriangle, TrendingUp, TrendingDown
 } from 'lucide-react';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // --- TYPES ---
 type Product = {
@@ -40,6 +36,7 @@ const DEFAULT_PRODUCT: Partial<Product> = {
 };
 
 export default function ProductsPage() {
+    const supabase = createClient();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');

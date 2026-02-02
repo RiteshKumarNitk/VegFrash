@@ -73,8 +73,9 @@ export default function CheckoutPage() {
             const orderItems = items.map(item => ({
                 order_id: order.id,
                 product_id: item.id,
-                quantity: item.quantity
-                // price field removed temporarily as it doesn't exist in DB
+                quantity: item.quantity,
+                price_at_time: item.price,
+                unit: item.weight || item.unit
             }));
 
             const { error: itemsError } = await supabase.from('order_items').insert(orderItems);

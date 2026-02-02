@@ -113,9 +113,19 @@ export default function StoreSignup() {
                         <Link href="/login" className="text-slate-400 hover:text-white text-sm">
                             Already have an account? Login
                         </Link>
-                        <button type="button" onClick={() => setStep('verify')} className="block w-full text-slate-500 hover:text-white text-xs mt-4 underline">
-                            I already have a code
-                        </button>
+                        <div className="mt-6 p-4 border border-slate-700 rounded-lg bg-slate-900/50">
+                            <p className="text-[10px] text-slate-500 uppercase font-black mb-2">Developer Tools</p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    alert("Bypass: If you see 'Email not confirmed' error on login, you must manually confirm the user in Supabase Dashboard -> Auth -> Users.");
+                                    setStep('verify');
+                                }}
+                                className="w-full text-emerald-500 hover:text-emerald-400 text-xs font-bold underline"
+                            >
+                                I am stuck at verification / No email received
+                            </button>
+                        </div>
                     </div>
                 </form>
             ) : (

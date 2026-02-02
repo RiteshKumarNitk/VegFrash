@@ -13,7 +13,16 @@ export default function FestivalBanner() {
             const supabase = createClient();
             const { data } = await supabase.from('site_settings').select('value').eq('key', 'theme_config').single();
             if (data?.value) {
-                setConfig(data.value);
+                let parsed = data.value;
+                if (typeof data.value === 'string') {
+                    try {
+                        parsed = JSON.parse(data.value);
+                    } catch (e) {
+                        console.error('Failed to parse theme_config in banner:', e);
+                        parsed = {};
+                    }
+                }
+                setConfig(parsed);
             }
         };
         fetchSettings();

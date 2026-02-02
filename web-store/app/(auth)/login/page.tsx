@@ -15,22 +15,38 @@ export default function StoreLogin() {
         e.preventDefault();
         setLoading(true);
 
-        const supabase = createClient();
+        try {
+            const supabase = createClient();
+            const { error, data } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        if (error) {
-            alert("Login Failed: " + error.message);
-        } else {
-            // Successful login
-            // Router refresh to update middleware/server components
-            router.refresh();
-            router.push('/');
+            if (error) {
+                // Better error messages
+                if (error.message.includes("Email not confirmed")) {
+                    alert("Account exists but email is not confirmed. Please check your inbox or use Supabase dashboard to auto-confirm.");
+                } else {
+                    alert("Login Failed: " + error.message);
+                }
+                console.error("Auth Error:", error);
+            } else if (data.session) {
+                // Successful login
+                console.log("Login Success, redirecting...");
+                // Force a full reload to ensure middleware sees the new session cookie immediately
+                window.location.href = '/';
+            }
+        } catch (err: any) {
+            alert("An unexpected error occurred: " + err.message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
+    };
+
+    const handleDemoLogin = async () => {
+        setEmail('admin@vegfrash.com');
+        setPassword('admin123');
+        // Let them click the button themselves so they see the credentials
     };
 
     return (
@@ -65,12 +81,19 @@ export default function StoreLogin() {
 
                     <button
                         disabled={loading}
-                        className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded transition-colors"
+                        className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded transition-colors active:scale-95 disabled:opacity-50"
                     >
                         {loading ? 'Verifying...' : 'ACCESS DASHBOARD'}
                     </button>
 
-                    <div className="text-center pt-4">
+                    <div className="flex flex-col gap-4 text-center pt-4">
+                        <button
+                            type="button"
+                            onClick={handleDemoLogin}
+                            className="text-emerald-500 hover:text-emerald-400 text-xs font-bold border border-emerald-500/30 py-2 rounded-lg"
+                        >
+                            Fill Demo Admin Credentials
+                        </button>
                         <Link href="/signup" className="text-slate-400 hover:text-white text-sm">
                             Need an account? Register
                         </Link>
