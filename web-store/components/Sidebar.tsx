@@ -8,11 +8,12 @@ import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 const NAV_ITEMS = [
-    { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Overview', href: '/', icon: LayoutDashboard },
     { label: 'Live Orders', href: '/orders', icon: Truck, badge: true },
     { label: 'Products', href: '/products', icon: Package },
     { label: 'Categories', href: '/categories', icon: Tags },
-    { label: 'Inventory', href: '/stock', icon: Layers },
+    { label: 'Live Control', href: '/stock', icon: Layers },
+    { label: 'Batch Inventory', href: '/inventory', icon: Layers },
     { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -44,12 +45,12 @@ export default function Sidebar() {
                 <nav className="space-y-1">
                     {NAV_ITEMS.map((item) => {
                         const Icon = item.icon;
-                        const isActive = pathname === item.href || (item.href === '/dashboard' && pathname === '/');
+                        const isActive = pathname === item.href;
 
                         return (
                             <Link
                                 key={item.href}
-                                href={item.href === '/dashboard' ? '/' : item.href}
+                                href={item.href}
                                 className={cn(
                                     "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group",
                                     isActive

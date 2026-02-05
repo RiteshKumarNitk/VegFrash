@@ -30,10 +30,14 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // Get User
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // Get User with safety
+    let user = null
+    try {
+        const { data } = await supabase.auth.getUser()
+        user = data?.user
+    } catch (e) {
+        console.error("Middleware fetch failed. This usually means a network issue or Supabase project is paused.")
+    }
 
     // Guard Routes
     if (!user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/signup')) {

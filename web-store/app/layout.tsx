@@ -4,6 +4,8 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 
+import AppShell from "@/components/AppShell";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -18,8 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-slate-50 min-h-screen`}>
-        {children}
+      <body className={`${inter.className} min-h-screen`}>
+        <AppShell>
+          {children}
+        </AppShell>
         <Toaster position="top-center" richColors />
       </body>
     </html>
