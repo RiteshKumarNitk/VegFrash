@@ -99,7 +99,14 @@ export default function InventoryPage() {
                                         <div className="text-xs text-slate-400 font-mono">{item.batch_code}</div>
                                     </td>
                                     <td className="px-6 py-4 text-slate-600">
-                                        {new Date(item.received_at).toLocaleDateString()}
+                                        <div className="flex items-center gap-2">
+                                            {new Date(item.received_at).toLocaleDateString()}
+                                            {Math.abs(Date.now() - new Date(item.received_at).getTime()) > 3 * 24 * 60 * 60 * 1000 && (
+                                                <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
+                                                    <RefreshCw size={10} className="animate-spin-slow" /> OLD STOCK
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex gap-1">

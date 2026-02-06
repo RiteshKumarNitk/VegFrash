@@ -30,7 +30,12 @@ export default function SettingsPage() {
             promo_code: 'FEST50',
             gradient: 'from-orange-500 via-red-500 to-yellow-500',
             announcement: ''
-        }
+        },
+        slots: [
+            { id: '1', label: 'Early Morning', time: '06:00 AM - 09:00 AM', active: true },
+            { id: '2', label: 'Mid-Day', time: '11:00 AM - 02:00 PM', active: true },
+            { id: '3', label: 'Evening', time: '05:00 PM - 08:00 PM', active: true }
+        ]
     });
 
     useEffect(() => {
@@ -71,6 +76,7 @@ export default function SettingsPage() {
                 if (row.key === 'operating_hours') newSettings.hours = { ...newSettings.hours, ...parsedValue };
                 if (row.key === 'order_rules') newSettings.rules = { ...newSettings.rules, ...parsedValue };
                 if (row.key === 'theme_config') newSettings.theme = { ...newSettings.theme, ...parsedValue };
+                if (row.key === 'delivery_slots') newSettings.slots = Array.isArray(parsedValue) ? parsedValue : newSettings.slots;
             });
             setSettings(newSettings);
         }
@@ -91,6 +97,7 @@ export default function SettingsPage() {
             { key: 'operating_hours', value: settings.hours },
             { key: 'order_rules', value: settings.rules },
             { key: 'theme_config', value: settings.theme },
+            { key: 'delivery_slots', value: settings.slots },
         ];
 
         try {
@@ -137,6 +144,7 @@ export default function SettingsPage() {
         { id: 'store', label: 'Store Profile', icon: Store },
         { id: 'hours', label: 'Operating Hours', icon: Clock },
         { id: 'rules', label: 'Order Rules', icon: ShieldCheck },
+        { id: 'slots', label: 'Delivery Slots', icon: Clock },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'theme', label: 'Theme & Branding', icon: Palette },
     ];
@@ -493,6 +501,81 @@ export default function SettingsPage() {
                                 </div>
                             )}
                         </div>
+                    </div>
+                )}
+                {/* 6. DELIVERY SLOTS */}
+                {activeTab === 'slots' && (
+                    <div className="max-w-xl space-y-6">
+                        <div className="flex justify-between items-center border-b pb-4 mb-6">
+                            <h2 className="text-xl font-bold text-gray-800">Delivery Slots</h2>
+                            <button
+                                onClick={() => {
+                                    const newSlot = { id: Date.now().toString(), label: 'New Slot', time: '09:00 AM - 12:00 PM', active: true };
+                                    setSettings({ ...settings, slots: [...settings.slots, newSlot] });
+                                }}
+                                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 uppercase tracking-widest"
+                            >
+                                + Add Window
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {settings.slots.map((slot: any, idx: number) => (
+                                <div key={slot.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 group">
+                                    <div className="flex-1 grid grid-cols-2 gap-4">
+                                        <input
+                                            type="text"
+                                            value={slot.label}
+                                            onChange={e => {
+                                                const newSlots = [...settings.slots];
+                                                newSlots[idx].label = e.target.value;
+                                                setSettings({ ...settings, slots: newSlots });
+                                            }}
+                                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold"
+                                            placeholder="Slot Name"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={slot.time}
+                                            onChange={e => {
+                                                const newSlots = [...settings.slots];
+                                                newSlots[idx].time = e.target.value;
+                                                setSettings({ ...settings, slots: newSlots });
+                                            }}
+                                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium"
+                                            placeholder="Time Window"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => {
+                                                const newSlots = [...settings.slots];
+                                                newSlots[idx].active = !newSlots[idx].active;
+                                                setSettings({ ...settings, slots: newSlots });
+                                            }}
+                                            className={`p-2 rounded-lg transition-colors ${slot.active ? 'text-emerald-600 bg-emerald-50' : 'text-gray-400 bg-gray-100'}`}
+                                        >
+                                            <Clock size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const newSlots = settings.slots.filter((_: any, i: number) => i !== idx);
+                                                setSettings({ ...settings, slots: newSlots });
+                                            }}
+                                            className="p-2 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {settings.slots.length === 0 && (
+                            <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-2xl">
+                                <p className="text-sm text-gray-400">No slots defined. Default morning delivery will be used.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 

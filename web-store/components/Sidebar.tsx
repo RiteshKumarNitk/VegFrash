@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Truck, Layers, Tags } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Settings, LogOut, Truck, Layers, Tags, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,9 @@ import { useRouter } from 'next/navigation';
 const NAV_ITEMS = [
     { label: 'Overview', href: '/', icon: LayoutDashboard },
     { label: 'Live Orders', href: '/orders', icon: Truck, badge: true },
+    { label: 'Customers', href: '/customers', icon: ShoppingCart },
+    { label: 'Coupons', href: '/coupons', icon: Tags },
+    { label: 'Staff Accounts', href: '/staff', icon: Users },
     { label: 'Products', href: '/products', icon: Package },
     { label: 'Categories', href: '/categories', icon: Tags },
     { label: 'Live Control', href: '/stock', icon: Layers },

@@ -7,7 +7,7 @@ import ModernHeader from '@/components/ui/ModernHeader';
 import AddressSelector from '@/components/features/AddressSelector';
 import Link from 'next/link';
 import ReactConfetti from 'react-confetti';
-import { ShieldCheck, Truck, CreditCard, ChevronRight, ShoppingBag, Ticket, Tag } from 'lucide-react';
+import { ShieldCheck, Truck, CreditCard, ChevronRight, ShoppingBag, Ticket, Tag, Clock } from 'lucide-react';
 
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCart();
@@ -16,6 +16,8 @@ export default function CheckoutPage() {
     const [placing, setPlacing] = useState(false);
     const [orderComplete, setOrderComplete] = useState(false);
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+    const [deliverySlots, setDeliverySlots] = useState<any[]>([]);
+    const [selectedSlot, setSelectedSlot] = useState<any>(null);
 
     // Dynamic Fee States
     const [platformFee, setPlatformFee] = useState(2);
@@ -50,6 +52,14 @@ export default function CheckoutPage() {
             if (profileData?.value) {
                 setShopStatus(profileData.value.status || 'open');
             }
+
+            // Fetch Slots
+            const { data: slotsData } = await supabase.from('site_settings').select('*').eq('key', 'delivery_slots').single();
+            if (slotsData?.value) {
+                const active = slotsData.value.filter((s: any) => s.active);
+                setDeliverySlots(active);
+                if (active.length > 0) setSelectedSlot(active[0]);
+            }
         };
         fetchSettings();
     }, []);
@@ -59,7 +69,7 @@ export default function CheckoutPage() {
     const couponDiscount = appliedCoupon ? appliedCoupon.discount : 0;
     const finalTotal = total + platformFee + deliveryCharge - couponDiscount;
 
-    const handleApplyCoupon = () => {
+    const handleApplyCoupon = async () => {
         setCouponError('');
         setCouponSuccess('');
         const code = couponInput.trim().toUpperCase();
@@ -69,23 +79,47 @@ export default function CheckoutPage() {
             return;
         }
 
-        // Dummy Logic for Demo (In real app, fetch from DB)
-        if (code === 'FEST50') {
-            const discount = Math.min(total * 0.5, 100); // 50% up to 100
-            if (total < 100) {
-                setCouponError('Minimum order ₹100 required');
-            } else {
-                setAppliedCoupon({ code, discount, type: 'percentage' });
-                setCouponSuccess(`Great! ₹${discount} saved`);
-                setCouponInput('');
-            }
-        } else if (code === 'VEG20') {
-            setAppliedCoupon({ code, discount: 20, type: 'flat' });
-            setCouponSuccess('₹20 Flat Off Applied');
-            setCouponInput('');
-        } else {
+        // Fetch from Supabase
+        const { data: coupon, error } = await supabase
+            .from('coupons')
+            .select('*')
+            .eq('code', code)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !coupon) {
             setCouponError('Invalid or expired code');
+            return;
         }
+
+        // Validate Expiry
+        if (coupon.expiry_date && new Date(coupon.expiry_date) < new Date()) {
+            setCouponError('This coupon has expired');
+            return;
+        }
+
+        // Validate Min Order
+        if (total < (coupon.min_order || 0)) {
+            setCouponError(`Minimum order of ₹${coupon.min_order} required`);
+            return;
+        }
+
+        // Calculate Discount
+        let discount = 0;
+        if (coupon.discount_type === 'percentage') {
+            discount = (total * coupon.discount_value) / 100;
+            if (coupon.max_discount) discount = Math.min(discount, coupon.max_discount);
+        } else {
+            discount = coupon.discount_value;
+        }
+
+        setAppliedCoupon({
+            code: coupon.code,
+            discount,
+            type: coupon.discount_type
+        });
+        setCouponSuccess(`Success! ₹${discount} discount applied`);
+        setCouponInput('');
     };
 
     const handleRemoveCoupon = () => {
@@ -113,7 +147,8 @@ export default function CheckoutPage() {
                 delivery_address_snapshot: selectedAddress,
                 items: items,
                 discount_amount: couponDiscount,
-                applied_coupon: appliedCoupon?.code || null
+                applied_coupon: appliedCoupon?.code || null,
+                delivery_slot: selectedSlot ? `${selectedSlot.label} (${selectedSlot.time})` : 'Standard'
             }).select().single();
 
             if (orderError) throw orderError;
@@ -194,7 +229,36 @@ export default function CheckoutPage() {
                         />
                     </div>
 
-                    {/* 2. Payment Section */}
+                    {/* 2. Delivery Slot Section */}
+                    <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100/60">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="bg-amber-50 w-10 h-10 rounded-full flex items-center justify-center text-amber-600">
+                                <Clock size={20} />
+                            </div>
+                            <h2 className="text-xl font-bold text-slate-800">Select Delivery Time</h2>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {deliverySlots.length > 0 ? (
+                                deliverySlots.map(slot => (
+                                    <button
+                                        key={slot.id}
+                                        onClick={() => setSelectedSlot(slot)}
+                                        className={`p-4 rounded-2xl border-2 text-left transition-all ${selectedSlot?.id === slot.id ? 'border-brand bg-emerald-50/50' : 'border-slate-50 hover:border-slate-200 bg-slate-50/30'}`}
+                                    >
+                                        <p className={`text-xs font-black uppercase tracking-widest mb-1 ${selectedSlot?.id === slot.id ? 'text-brand' : 'text-slate-400'}`}>{slot.label}</p>
+                                        <p className="text-sm font-bold text-slate-800">{slot.time}</p>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="col-span-full p-4 bg-slate-50 rounded-xl text-center">
+                                    <p className="text-sm text-slate-500 font-medium italic">Standard delivery timing will be applied.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 3. Payment Section */}
                     <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100/60 transition-all">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="bg-indigo-50 w-10 h-10 rounded-full flex items-center justify-center text-indigo-600">

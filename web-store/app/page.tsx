@@ -6,6 +6,7 @@ import {
   Package, Calendar, CheckCircle2, TrendingUp,
   AlertTriangle, ShoppingBag, Truck
 } from 'lucide-react';
+import SalesTrendChart from '@/components/SalesTrendChart';
 
 export default function DashboardPage() {
   const supabase = createClient();
@@ -16,9 +17,12 @@ export default function DashboardPage() {
     totalStock: 0,
     reservedStock: 0,
     totalSales: 0,
-    storeStatus: 'open'
+    storeStatus: 'open',
+    lowStockCount: 0
   });
   const [feed, setFeed] = useState<any[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<any[]>([]);
+  const [salesTrend, setSalesTrend] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +57,10 @@ export default function DashboardPage() {
     // 3. Sales Metrics
     const totalSales = orders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
 
+    // 4. Low Stock detection
+    const lowStockList = products.filter(p => p.total_stock < 5);
+    setLowStockItems(lowStockList);
+
     setMetrics({
       newRequests,
       scheduled,
@@ -60,11 +68,25 @@ export default function DashboardPage() {
       totalStock,
       reservedStock,
       totalSales,
-      storeStatus: settings.status || 'open'
+      storeStatus: settings.status || 'open',
+      lowStockCount: lowStockList.length
     });
 
-    // 4. Feed (Recent Orders)
-    setFeed(orders.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5));
+    // 5. Sales Trend (Last 7 Days)
+    const trendData = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric' });
+      const dayKey = date.toISOString().split('T')[0];
+
+      const daySales = orders
+        .filter((o: any) => o.created_at.startsWith(dayKey))
+        .reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0);
+
+      trendData.push({ date: dateStr, amount: daySales });
+    }
+    setSalesTrend(trendData);
 
     setLoading(false);
   };
@@ -122,7 +144,26 @@ export default function DashboardPage() {
         <StatusCard label="Completed" count={metrics.completed} icon={CheckCircle2} color="green" loading={loading} />
       </div>
 
-      {/* 3. Recent Requests Feed */}
+      {/* 3. Sales Trend Chart */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="font-bold text-lg text-slate-800">Weekly Sales Analytics</h3>
+            <p className="text-xs text-slate-400 font-medium">Revenue trend over the last 7 days</p>
+          </div>
+          <div className="text-right">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Total 7D Revenue</span>
+            <span className="text-lg font-black text-emerald-600">₹{salesTrend.reduce((sum, d) => sum + d.amount, 0).toLocaleString()}</span>
+          </div>
+        </div>
+        {loading ? (
+          <div className="h-[300px] w-full bg-slate-50 animate-pulse rounded-xl" />
+        ) : (
+          <SalesTrendChart data={salesTrend} />
+        )}
+      </div>
+
+      {/* 4. Recent Requests Feed & Stock Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex justify-between items-center mb-6">
@@ -151,19 +192,37 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Business Stat */}
+        {/* Low Stock Alerts */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
-          <h3 className="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2">
-            <TrendingUp size={18} className="text-emerald-500" /> Business Health
+          <h3 className="font-bold text-lg mb-4 text-slate-800 flex items-center gap-2">
+            <AlertTriangle size={18} className="text-amber-500" /> Stock Alerts
           </h3>
-          <div className="mt-6 space-y-6">
+          <div className="space-y-3">
+            {lowStockItems.length > 0 ? (
+              lowStockItems.map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-amber-50 rounded-xl border border-amber-100">
+                  <span className="text-sm font-bold text-amber-900">{item.name}</span>
+                  <span className="text-xs font-black text-amber-700 bg-white px-2 py-0.5 rounded shadow-sm">{item.total_stock} left</span>
+                </div>
+              ))
+            ) : (
+              <div className="p-4 text-center bg-emerald-50 rounded-xl border border-emerald-100">
+                <p className="text-sm font-bold text-emerald-700">All stock stable</p>
+              </div>
+            )}
+          </div>
+          <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+            <span>Business Health</span>
+            <TrendingUp size={14} className="text-emerald-500" />
+          </div>
+          <div className="mt-4 space-y-4">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sales</p>
-              <h2 className="text-3xl font-black text-slate-900">₹{metrics.totalSales.toLocaleString()}</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Sales</p>
+              <h2 className="text-2xl font-black text-slate-900">₹{metrics.totalSales.toLocaleString()}</h2>
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Avg Order Value</p>
-              <h2 className="text-xl font-bold text-slate-700">₹{metrics.completed > 0 ? Math.round(metrics.totalSales / metrics.completed) : 0}</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Avg Order Value</p>
+              <h2 className="text-lg font-bold text-slate-700">₹{metrics.completed > 0 ? Math.round(metrics.totalSales / metrics.completed) : 0}</h2>
             </div>
           </div>
         </div>
