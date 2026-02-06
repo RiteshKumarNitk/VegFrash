@@ -7,6 +7,7 @@ import {
     X, BarChart3, Tag, Package,
     AlertTriangle, TrendingUp, TrendingDown
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- TYPES ---
 type Product = {
@@ -23,16 +24,13 @@ type Product = {
     service_availability: string[];
     discount_config: { type: string, value: number, label: string } | null;
     tags: string[];
-    theme_color: string | null;
-    sales_velocity: number;
-    return_rate: number;
     customer_rating: number;
 };
 
 const DEFAULT_PRODUCT: Partial<Product> = {
     name: '', price: 0, weight: '', total_stock: 0, reserved_stock: 0,
     is_visible: true, service_availability: ['today', 'tomorrow'],
-    discount_config: null, tags: [], sales_velocity: 0, return_rate: 0, customer_rating: 5
+    discount_config: null, tags: [], customer_rating: 5
 };
 
 export default function ProductsPage() {
@@ -85,29 +83,55 @@ export default function ProductsPage() {
 
     const handleSave = async () => {
         setIsSaving(true);
-        const payload = { ...drawerForm };
 
-        // Remove derived/readonly fields if necessary, but Partial<Product> is fine for Supabase usually if columns match
+        // Clean payload: Filter out fields that don't exist in the lean DB schema
+        const allowedFields = [
+            'name', 'image', 'price', 'old_price', 'weight',
+            'category_id', 'total_stock', 'reserved_stock',
+            'is_visible', 'service_availability', 'discount_config',
+            'tags', 'customer_rating'
+        ];
+
+        const payload: any = {};
+        allowedFields.forEach(field => {
+            let val = drawerForm[field as keyof Product];
+            // Handle empty UUID fields
+            if (field === 'category_id' && val === '') val = null;
+
+            if (val !== undefined) {
+                payload[field] = val;
+            }
+        });
+
         // Explicitly ensuring service_availability is array
         if (!Array.isArray(payload.service_availability)) payload.service_availability = [];
 
-        if (!selectedProduct?.id) {
-            // Create New
-            const { error } = await supabase.from('products').insert([payload]);
-            if (!error) fetchData();
-        } else {
-            // Update
-            const { error } = await supabase
-                .from('products')
-                .update(payload)
-                .eq('id', selectedProduct.id);
+        try {
+            if (!selectedProduct?.id) {
+                // Create New
+                const { error } = await supabase.from('products').insert([payload]);
+                if (error) throw error;
+                toast.success("Product created successfully!");
+            } else {
+                // Update
+                const { error } = await supabase
+                    .from('products')
+                    .update(payload)
+                    .eq('id', selectedProduct.id);
 
-            if (!error) {
-                setProducts(products.map(p => p.id === selectedProduct.id ? { ...p, ...payload } as Product : p));
+                if (error) throw error;
+                toast.success("Product updated successfully!");
             }
+
+            // Re-fetch to ensure list is in sync with DB
+            await fetchData();
+            closeDrawer();
+        } catch (error: any) {
+            console.error('Save failed:', error);
+            toast.error("Failed to save product: " + (error.message || "Unknown error"));
+        } finally {
+            setIsSaving(false);
         }
-        setIsSaving(false);
-        closeDrawer();
     };
 
     // --- FORM HANDLERS ---
@@ -143,14 +167,20 @@ export default function ProductsPage() {
         updateField('image', objectUrl);
 
         try {
-            const { error } = await supabase.storage.from('products').upload(fileName, file);
-            if (error) throw error;
+            console.log('Starting upload for:', fileName);
+            const { error: uploadError } = await supabase.storage.from('products').upload(fileName, file);
+
+            if (uploadError) {
+                console.error('Storage Upload Error:', uploadError);
+                throw new Error(uploadError.message || 'Storage upload failed');
+            }
 
             const { data } = supabase.storage.from('products').getPublicUrl(fileName);
+            console.log('Upload successful. Public URL:', data.publicUrl);
             updateField('image', data.publicUrl);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Upload failed:', err);
-            alert('Image upload failed. Please try again.');
+            alert(`Image upload failed: ${err.message || 'Unknown error'}. Please ensure the "products" storage bucket exists and has public access.`);
         }
     };
 

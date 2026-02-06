@@ -99,7 +99,7 @@ export default function OrderInvoicePage() {
 
     // Full detailed tracking steps
     const steps = [
-        { key: 'placed', label: 'Placed', icon: FileText },
+        { key: 'placed', label: 'Received', icon: FileText },
         { key: 'confirmed', label: 'Confirmed', icon: CheckCircle2 },
         { key: 'packed', label: 'Packed', icon: Package },
         { key: 'out_for_delivery', label: 'On Way', icon: Truck },
@@ -151,10 +151,15 @@ export default function OrderInvoicePage() {
                             <div className="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-slate-100">
                                 <div style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-brand transition-all duration-1000 ease-out"></div>
                             </div>
-                            <div className="flex justify-between w-full text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                <span>Placed</span>
-                                <span className={`${currentStepIndex >= 2 ? 'text-brand' : ''}`}>Packed</span>
-                                <span className={`${currentStepIndex >= 4 ? 'text-brand' : ''}`}>Delivered</span>
+                            <div className="flex justify-between w-full text-[10px] md:text-xs font-bold uppercase tracking-wider">
+                                {steps.map((step, idx) => (
+                                    <span
+                                        key={step.key}
+                                        className={idx <= currentStepIndex ? 'text-brand' : 'text-slate-400'}
+                                    >
+                                        {step.label}
+                                    </span>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -211,25 +216,40 @@ export default function OrderInvoicePage() {
 
                             {/* BILL DETAILS */}
                             <div className="bg-slate-50 p-6 space-y-3">
-                                <div className="flex justify-between text-sm text-slate-600">
-                                    <span>Item Total</span>
-                                    <span className="font-medium">₹{order.total_amount - (order.delivery_charge || 0) - (order.platform_fee || 0)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm text-slate-600">
-                                    <span>Delivery Fee</span>
-                                    <span className="text-green-600 font-bold">{order.delivery_charge > 0 ? `₹${order.delivery_charge}` : 'FREE'}</span>
-                                </div>
-                                <div className="flex justify-between text-sm text-slate-600">
-                                    <span>Handling Fee</span>
-                                    <span className="font-medium">₹{order.platform_fee || 0}</span>
-                                </div>
+                                {(() => {
+                                    const itemTotal = items.reduce((sum, item) => sum + ((item.price_at_time || 0) * item.quantity), 0);
+                                    const totalFees = order.total_amount - itemTotal;
+
+                                    // Split fees: prefer DB columns if they exist, else assume PLATFORM_FEE is 2 and rest is delivery
+                                    const dbPlatform = order.platform_fee;
+                                    const dbDelivery = order.delivery_charge;
+
+                                    const displayPlatform = dbPlatform !== undefined && dbPlatform !== null ? dbPlatform : (totalFees > 0 ? 2 : 0);
+                                    const displayDelivery = dbDelivery !== undefined && dbDelivery !== null ? dbDelivery : (totalFees - displayPlatform);
+
+                                    return (
+                                        <>
+                                            <div className="flex justify-between text-sm text-slate-600">
+                                                <span>Item Total</span>
+                                                <span className="font-medium">₹{itemTotal}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm text-slate-600">
+                                                <span>Delivery Fee</span>
+                                                <span className={displayDelivery <= 0 ? "text-green-600 font-bold" : "font-medium"}>
+                                                    {displayDelivery <= 0 ? 'FREE' : `₹${displayDelivery}`}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-sm text-slate-600">
+                                                <span>Packaging Fee</span>
+                                                <span className="font-medium">₹{displayPlatform}</span>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                                 <div className="border-t border-slate-200 mt-2"></div>
                                 <div className="flex justify-between items-center text-lg font-black text-slate-800 pt-1">
                                     <span>Grand Total</span>
                                     <span>₹{order.total_amount}</span>
-                                </div>
-                                <div className="bg-green-50 border border-green-100 rounded-lg px-3 py-2 text-center">
-                                    <p className="text-xs font-bold text-green-700">Savings: You saved ₹25 on this order!</p>
                                 </div>
                             </div>
                         </div>

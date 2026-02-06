@@ -28,6 +28,7 @@ export default function ProductCard({ id, name, weight, price, oldPrice, image, 
             id: productId,
             name,
             price,
+            weight,
             unit: 'pc', // Defaulting to pc for simplified demo
             image
         });

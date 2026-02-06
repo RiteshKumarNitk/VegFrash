@@ -7,6 +7,7 @@ type CartItem = {
     name: string;
     price: number;
     unit: 'kg' | 'pc';
+    weight?: string;
     quantity: number;
     image?: string;
 };
@@ -52,6 +53,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 name: product.name,
                 price: product.base_price || product.price,
                 unit: product.pricing_type === 'per_kg' ? 'kg' : 'pc',
+                weight: product.weight,
                 quantity: product.pricing_type === 'per_kg' ? 0.5 : 1,
                 image: product.image
             }];

@@ -8,7 +8,7 @@ export default function AddAddressForm({ onCancel, onSuccess }: { onCancel: () =
 
     const [box, setBox] = useState({
         house_flat_no: '',
-        apartment_road_area: '',
+        area_locality: '',
         landmark: '',
         receiver_name: '',
         receiver_phone: ''
@@ -23,25 +23,19 @@ export default function AddAddressForm({ onCancel, onSuccess }: { onCancel: () =
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Not logged in");
 
-            // Mock Lat/Long for Demo (Bangalore Koramangala)
-            // In real app, we would use a Map picker
             const mockLat = 12.9352;
             const mockLng = 77.6245;
 
+            const fullAddress = `${box.house_flat_no}, ${box.area_locality}${box.landmark ? ', ' + box.landmark : ''}`;
+
             const { error } = await supabase.from('customer_addresses').insert({
                 user_id: user.id,
-                house_flat_no: box.house_flat_no,
-                apartment_road_area: box.apartment_road_area,
-                landmark: box.landmark,
                 receiver_name: box.receiver_name,
                 receiver_phone: box.receiver_phone,
                 address_label: label,
-                full_address_text: `${box.house_flat_no}, ${box.apartment_road_area}, ${box.landmark}`,
-                // Insert as GeoJSON or WKT if PostGIS is enabled, specific syntax depends on setup. 
-                // Using a fallback raw query usually safest for PostGIS, but let's try standard Supabase GIS insert if supported, 
-                // or just standard points. 
-                // NOTE: 'lat_long' is GEOMETRY(Point, 4326). Supabase client might expect WKT.
-                lat_long: `POINT(${mockLng} ${mockLat})`
+                full_address_text: fullAddress,
+                latitude: mockLat,
+                longitude: mockLng
             });
 
             if (error) throw error;
@@ -82,10 +76,10 @@ export default function AddAddressForm({ onCancel, onSuccess }: { onCancel: () =
                     />
                 </div>
                 <input
-                    required placeholder="Apartment / Road / Area"
+                    required placeholder="Apartment / Road / Locality"
                     className="w-full p-2 border rounded text-sm"
-                    value={box.apartment_road_area}
-                    onChange={e => setBox({ ...box, apartment_road_area: e.target.value })}
+                    value={box.area_locality}
+                    onChange={e => setBox({ ...box, area_locality: e.target.value })}
                 />
                 <input
                     placeholder="Landmark (Optional)"

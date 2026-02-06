@@ -59,11 +59,8 @@ export default function CheckoutPage() {
             const { data: order, error: orderError } = await supabase.from('orders').insert({
                 user_id: user.id,
                 total_amount: finalTotal,
-                platform_fee: platformFee,
-                delivery_charge: deliveryCharge,
-                status: 'placed',
+                status: 'pending',
                 delivery_address_snapshot: selectedAddress,
-                payment_status: 'pending',
                 items: items
             }).select().single();
 
@@ -320,7 +317,7 @@ export default function CheckoutPage() {
                                 )}
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-slate-500 font-medium">Handling Fee</span>
+                                <span className="text-slate-500 font-medium">Packaging Fee</span>
                                 <span className="text-slate-800 font-semibold">₹{platformFee}</span>
                             </div>
 

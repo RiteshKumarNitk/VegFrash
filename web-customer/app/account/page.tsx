@@ -40,7 +40,7 @@ export default function AccountPage() {
             case 'orders':
                 return <OrdersView user={user} />;
             case 'addresses':
-                return <AddressesView />;
+                return <AddressesView user={user} />;
             case 'payments':
                 return <PaymentsView />;
             case 'notifications':
@@ -487,23 +487,46 @@ function OrdersView({ user }: { user: any }) {
     );
 }
 
-function AddressesView() {
+function AddressesView({ user }: { user: any }) {
+    const [addresses, setAddresses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const supabase = createClient();
+
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            if (!user) return;
+            const { data } = await supabase
+                .from('customer_addresses')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('is_default', { ascending: false });
+            if (data) setAddresses(data);
+            setLoading(false);
+        };
+        fetchAddresses();
+    }, [user]);
+
+    if (loading) return <div className="h-40 bg-slate-50 rounded-xl animate-pulse" />;
+
     return (
         <div>
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><MapPin className="text-blue-500" /> Saved Addresses</h2>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="border border-brand bg-brand/5 rounded-xl p-6 relative">
-                    <span className="absolute top-4 right-4 bg-brand text-white text-[10px] uppercase font-bold px-2 py-1 rounded">Default</span>
-                    <h3 className="font-bold text-slate-800 mb-1">Home</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed mb-4">12, Green Park, Civil Lines,<br />New Delhi - 1100xx</p>
-                    <p className="text-xs text-slate-500 font-bold">Ph: +91 98765 43210</p>
-                    <div className="mt-4 pt-4 border-t border-brand/10 flex gap-4 text-sm font-bold text-brand">
-                        <button>Edit</button>
-                        <button className="text-red-500">Delete</button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {addresses.map(addr => (
+                    <div key={addr.id} className={`border rounded-xl p-6 relative ${addr.is_default ? 'border-brand bg-brand/5' : 'border-slate-200'}`}>
+                        {addr.is_default && <span className="absolute top-4 right-4 bg-brand text-white text-[10px] uppercase font-bold px-2 py-1 rounded">Default</span>}
+                        <h3 className="font-bold text-slate-800 mb-1">{addr.address_label}</h3>
+                        <p className="text-sm text-slate-600 leading-relaxed mb-4">{addr.full_address_text}</p>
+                        {addr.receiver_phone && <p className="text-xs text-slate-500 font-bold">Ph: {addr.receiver_phone}</p>}
+                        <div className="mt-4 pt-4 border-t border-slate-100 flex gap-4 text-sm font-bold text-brand">
+                            <button>Edit</button>
+                            <button className="text-red-500">Delete</button>
+                        </div>
                     </div>
-                </div>
-                <button className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 hover:border-brand hover:text-brand hover:bg-slate-50 transition-all">
-                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-2 text-2xl">+</div>
+                ))}
+
+                <button className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 hover:border-brand hover:text-brand hover:bg-slate-50 transition-all min-h-[160px]">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-2 text-2xl text-slate-400">+</div>
                     <span className="font-bold text-sm">Add New Address</span>
                 </button>
             </div>
@@ -515,23 +538,11 @@ function PaymentsView() {
     return (
         <div>
             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2"><CreditCard className="text-purple-500" /> Payment Methods</h2>
-            <div className="space-y-4 max-w-lg">
-                <div className="flex items-center gap-4 border border-slate-200 p-4 rounded-xl">
-                    <div className="w-12 h-8 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-xs">VISA</div>
-                    <div className="flex-1">
-                        <p className="font-bold text-slate-700 text-sm">HDFC Bank Credit Card</p>
-                        <p className="text-xs text-slate-400">Ending in 4242</p>
-                    </div>
-                    <button className="text-red-500 text-xs font-bold">Remove</button>
-                </div>
-                <div className="flex items-center gap-4 border border-slate-200 p-4 rounded-xl">
-                    <div className="w-12 h-8 bg-green-500 rounded flex items-center justify-center text-white font-bold text-xs">UPI</div>
-                    <div className="flex-1">
-                        <p className="font-bold text-slate-700 text-sm">Google Pay</p>
-                        <p className="text-xs text-slate-400">user@oksbi</p>
-                    </div>
-                    <button className="text-red-500 text-xs font-bold">Remove</button>
-                </div>
+            <div className="bg-slate-50 p-12 rounded-2xl text-center border-2 border-dashed border-slate-200 shadow-inner">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm text-slate-300">💳</div>
+                <h3 className="font-bold text-slate-700">No Saved Cards</h3>
+                <p className="text-sm text-slate-400 mt-1 max-w-[200px] mx-auto">Your saved payment methods will appear here for faster checkout.</p>
+                <button className="mt-6 text-brand font-bold text-sm bg-white px-6 py-2 rounded-lg shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors">Add New Method</button>
             </div>
         </div>
     )

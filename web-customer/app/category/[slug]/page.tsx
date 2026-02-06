@@ -28,7 +28,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         const slugMap: Record<string, string> = {
             'vegetables': 'fruits-vegetables',
             'fruits': 'fruits-vegetables',
-            'veggies': 'fruits-vegetables'
+            'veggies': 'fruits-vegetables',
+            'vegetable': 'fruits-vegetables'
         };
 
         // 1. Try Exact Match First (Priority)

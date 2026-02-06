@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import { Trash2, Plus, Edit2, Upload, X, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CategoriesPage() {
     const [categories, setCategories] = useState<any[]>([]);

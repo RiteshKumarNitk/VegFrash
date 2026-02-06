@@ -39,8 +39,8 @@ export default async function Home() {
     }
   });
 
-  // Filter categories to only those that have products
-  const activeCategories = categories.filter(c => productsByCategory[c.id]?.length > 0);
+  // Display all categories
+  const activeCategories = categories;
 
   return (
     <main className={`min-h-screen bg-white pb-24`}>
@@ -79,11 +79,17 @@ export default async function Home() {
                     flex gap-4 
                     ${deviceType === 'mobile' ? 'overflow-x-auto no-scrollbar pb-4 pr-4' : 'grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6'}
                  `}>
-              {productsByCategory[category.id]?.slice(0, 6).map((item: any, i: number) => (
-                <div key={i} className={`${deviceType === 'mobile' ? 'min-w-[150px] w-[150px]' : 'w-full'}`}>
-                  <ProductCard {...item} />
+              {productsByCategory[category.id]?.length > 0 ? (
+                productsByCategory[category.id]?.slice(0, 6).map((item: any, i: number) => (
+                  <div key={i} className={`${deviceType === 'mobile' ? 'min-w-[150px] w-[150px]' : 'w-full'}`}>
+                    <ProductCard {...item} />
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center w-full">
+                  <p className="text-slate-400 font-medium">Coming soon! Fresh {category.name} will be available shortly.</p>
                 </div>
-              ))}
+              )}
             </div>
           </section>
         ))}

@@ -186,7 +186,7 @@ export default function SignupPage() {
                         </div>
                     </form>
 
-                    <div className="mt-6 flex items-center justify-center">
+                    <div className="mt-6 flex flex-col items-center justify-center gap-4">
                         <div className="text-sm">
                             <span className="text-slate-500">
                                 Already have an account?
@@ -194,6 +194,20 @@ export default function SignupPage() {
                             <Link href="/login" className="ml-2 font-medium text-brand hover:text-brand-dark">
                                 Login
                             </Link>
+                        </div>
+
+                        <div className="w-full pt-4 border-t border-slate-100">
+                            <p className="text-[10px] text-slate-400 uppercase font-black mb-2 text-center">Developer Tools</p>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    alert("Bypass: If you see 'Email not confirmed' error on login, you must manually confirm the user in Supabase Dashboard -> Auth -> Users.");
+                                    setStep('verify');
+                                }}
+                                className="w-full text-brand/60 hover:text-brand text-xs font-bold underline"
+                            >
+                                I am stuck at verification / No email received
+                            </button>
                         </div>
                     </div>
 
