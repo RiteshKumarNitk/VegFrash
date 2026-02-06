@@ -315,14 +315,23 @@ export default function ProductsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-3 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Price (₹)</label>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Selling Price (₹)</label>
                                             <input
                                                 type="number"
                                                 value={drawerForm.price}
                                                 onChange={e => updateField('price', parseFloat(e.target.value))}
-                                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold"
+                                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-emerald-700"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">MRP / Original (₹)</label>
+                                            <input
+                                                type="number"
+                                                value={drawerForm.old_price || ''}
+                                                onChange={e => updateField('old_price', e.target.value ? parseFloat(e.target.value) : null)}
+                                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-gray-400 line-through"
                                             />
                                         </div>
                                         <div>
@@ -331,6 +340,7 @@ export default function ProductsPage() {
                                                 value={drawerForm.weight}
                                                 onChange={e => updateField('weight', e.target.value)}
                                                 className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold"
+                                                placeholder="500g / 1 unit"
                                             />
                                         </div>
                                     </div>

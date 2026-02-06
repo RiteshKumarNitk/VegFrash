@@ -7,7 +7,7 @@ import ModernHeader from '@/components/ui/ModernHeader';
 import AddressSelector from '@/components/features/AddressSelector';
 import Link from 'next/link';
 import ReactConfetti from 'react-confetti';
-import { ShieldCheck, Truck, CreditCard, ChevronRight, ShoppingBag } from 'lucide-react';
+import { ShieldCheck, Truck, CreditCard, ChevronRight, ShoppingBag, Ticket, Tag } from 'lucide-react';
 
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCart();
@@ -21,6 +21,13 @@ export default function CheckoutPage() {
     const [platformFee, setPlatformFee] = useState(2);
     const [deliveryFee, setDeliveryFee] = useState(25);
     const [freeDeliveryAbove, setFreeDeliveryAbove] = useState(99);
+    const [shopStatus, setShopStatus] = useState('open');
+
+    // Coupon States
+    const [couponInput, setCouponInput] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+    const [couponError, setCouponError] = useState('');
+    const [couponSuccess, setCouponSuccess] = useState('');
 
     const supabase = createClient();
     const router = useRouter();
@@ -29,11 +36,19 @@ export default function CheckoutPage() {
         setWindowSize({ width: window.innerWidth, height: window.innerHeight });
 
         const fetchSettings = async () => {
-            const { data } = await supabase.from('site_settings').select('*').eq('key', 'order_rules').single();
-            if (data?.value) {
-                if (data.value.handling_fee !== undefined) setPlatformFee(data.value.handling_fee);
-                if (data.value.delivery_fee !== undefined) setDeliveryFee(data.value.delivery_fee);
-                if (data.value.free_delivery_above !== undefined) setFreeDeliveryAbove(data.value.free_delivery_above);
+            // Fetch Rules
+            const { data: rulesData } = await supabase.from('site_settings').select('*').eq('key', 'order_rules').single();
+            if (rulesData?.value) {
+                const val = rulesData.value;
+                if (val.handling_fee !== undefined) setPlatformFee(val.handling_fee);
+                if (val.delivery_fee !== undefined) setDeliveryFee(val.delivery_fee);
+                if (val.free_delivery_above !== undefined) setFreeDeliveryAbove(val.free_delivery_above);
+            }
+
+            // Fetch Shop Status
+            const { data: profileData } = await supabase.from('site_settings').select('*').eq('key', 'store_profile').single();
+            if (profileData?.value) {
+                setShopStatus(profileData.value.status || 'open');
             }
         };
         fetchSettings();
@@ -41,7 +56,42 @@ export default function CheckoutPage() {
 
     // Derived Calculations
     const deliveryCharge = total > freeDeliveryAbove ? 0 : deliveryFee;
-    const finalTotal = total + platformFee + deliveryCharge;
+    const couponDiscount = appliedCoupon ? appliedCoupon.discount : 0;
+    const finalTotal = total + platformFee + deliveryCharge - couponDiscount;
+
+    const handleApplyCoupon = () => {
+        setCouponError('');
+        setCouponSuccess('');
+        const code = couponInput.trim().toUpperCase();
+
+        if (!code) {
+            setCouponError('Please enter a code');
+            return;
+        }
+
+        // Dummy Logic for Demo (In real app, fetch from DB)
+        if (code === 'FEST50') {
+            const discount = Math.min(total * 0.5, 100); // 50% up to 100
+            if (total < 100) {
+                setCouponError('Minimum order ₹100 required');
+            } else {
+                setAppliedCoupon({ code, discount, type: 'percentage' });
+                setCouponSuccess(`Great! ₹${discount} saved`);
+                setCouponInput('');
+            }
+        } else if (code === 'VEG20') {
+            setAppliedCoupon({ code, discount: 20, type: 'flat' });
+            setCouponSuccess('₹20 Flat Off Applied');
+            setCouponInput('');
+        } else {
+            setCouponError('Invalid or expired code');
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponSuccess('');
+    };
 
     const handlePlaceOrder = async () => {
         if (!selectedAddress) return alert("Please select a delivery address");
@@ -61,7 +111,9 @@ export default function CheckoutPage() {
                 total_amount: finalTotal,
                 status: 'pending',
                 delivery_address_snapshot: selectedAddress,
-                items: items
+                items: items,
+                discount_amount: couponDiscount,
+                applied_coupon: appliedCoupon?.code || null
             }).select().single();
 
             if (orderError) throw orderError;
@@ -302,6 +354,55 @@ export default function CheckoutPage() {
                                 </div>
                             ))}
                         </div>
+                        {/* Coupon Section */}
+                        <div className="mb-6">
+                            {!appliedCoupon ? (
+                                <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1 group">
+                                            <Ticket size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand transition-colors" />
+                                            <input
+                                                type="text"
+                                                placeholder="Enter Promo Code"
+                                                className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-brand focus:ring-2 focus:ring-brand/10 transition-all placeholder:text-slate-400 uppercase"
+                                                value={couponInput}
+                                                onChange={(e) => {
+                                                    setCouponInput(e.target.value);
+                                                    setCouponError('');
+                                                }}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={handleApplyCoupon}
+                                            className="px-4 py-2.5 bg-brand text-white font-bold text-sm rounded-xl hover:bg-brand-dark transition-all active:scale-95 shadow-sm"
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
+                                    {couponError && <p className="text-[10px] font-bold text-red-500 ml-1 animate-shake">⚠️ {couponError}</p>}
+                                </div>
+                            ) : (
+                                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex items-center justify-between animate-scale-in">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-emerald-500 text-white rounded-lg flex items-center justify-center shadow-sm">
+                                            <Tag size={14} fill="currentColor" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider leading-none">Coupon Applied</p>
+                                            <p className="text-xs font-extrabold text-slate-800 tracking-tight">{appliedCoupon.code}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={handleRemoveCoupon}
+                                        className="text-[10px] font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-tight"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            )}
+                            {couponSuccess && !appliedCoupon && <p className="text-[10px] font-bold text-emerald-600 ml-1 mt-1">🎉 {couponSuccess}</p>}
+                        </div>
 
                         <div className="space-y-3 pt-2">
                             <div className="flex justify-between text-sm">
@@ -321,6 +422,15 @@ export default function CheckoutPage() {
                                 <span className="text-slate-800 font-semibold">₹{platformFee}</span>
                             </div>
 
+                            {appliedCoupon && (
+                                <div className="flex justify-between text-sm text-emerald-600 animate-in fade-in slide-in-from-right-1">
+                                    <span className="font-bold flex items-center gap-1">
+                                        <Tag size={12} fill="currentColor" /> Promo Discount
+                                    </span>
+                                    <span className="font-bold">-₹{couponDiscount}</span>
+                                </div>
+                            )}
+
                             <div className="border-t-2 border-dashed border-slate-100 my-4"></div>
 
                             <div className="flex justify-between items-end">
@@ -331,12 +441,18 @@ export default function CheckoutPage() {
 
                         <button
                             onClick={handlePlaceOrder}
-                            disabled={placing || items.length === 0}
-                            className="w-full mt-8 bg-brand text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-brand/25 hover:bg-brand-dark hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
+                            disabled={placing || items.length === 0 || shopStatus === 'closed'}
+                            className={`w-full mt-8 py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden ${shopStatus === 'closed' ? 'bg-slate-400 text-white' : 'bg-brand text-white shadow-brand/25 hover:bg-brand-dark hover:scale-[1.02]'}`}
                         >
                             <span className="relative z-10 flex items-center justify-center gap-2">
-                                {placing ? 'Placing Order...' : 'Place Order'}
-                                {!placing && <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />}
+                                {shopStatus === 'closed' ? (
+                                    <>⏳ Store is Closed</>
+                                ) : placing ? (
+                                    <>Placing Order...</>
+                                ) : (
+                                    <>Place Order</>
+                                )}
+                                {!placing && shopStatus !== 'closed' && <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />}
                             </span>
                         </button>
 

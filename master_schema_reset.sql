@@ -105,6 +105,8 @@ CREATE TABLE IF NOT EXISTS public.orders (
   total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
   delivery_address_snapshot JSONB, -- Stores full address at time of order
   items JSONB, -- Redundant but used in some UI views for speed
+  rider_id UUID REFERENCES public.delivery_partners(id),
+  rider_assigned_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

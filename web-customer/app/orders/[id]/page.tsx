@@ -12,6 +12,7 @@ export default function OrderInvoicePage() {
     const [items, setItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [dynamicFees, setDynamicFees] = useState({ platform: 2, delivery: 25, freeAbove: 99 });
     const supabase = createClient();
 
     useEffect(() => {
@@ -56,6 +57,16 @@ export default function OrderInvoicePage() {
                 }
 
                 setItems(finalItems);
+
+                // 3. Fetch Order Rules for Fallback
+                const { data: rulesData } = await supabase.from('site_settings').select('*').eq('key', 'order_rules').single();
+                if (rulesData?.value) {
+                    setDynamicFees({
+                        platform: rulesData.value.handling_fee ?? 2,
+                        delivery: rulesData.value.delivery_fee ?? 25,
+                        freeAbove: rulesData.value.free_delivery_above ?? 99
+                    });
+                }
 
             } catch (err: any) {
                 console.error("Order load error:", err);
@@ -218,14 +229,13 @@ export default function OrderInvoicePage() {
                             <div className="bg-slate-50 p-6 space-y-3">
                                 {(() => {
                                     const itemTotal = items.reduce((sum, item) => sum + ((item.price_at_time || 0) * item.quantity), 0);
-                                    const totalFees = order.total_amount - itemTotal;
 
-                                    // Split fees: prefer DB columns if they exist, else assume PLATFORM_FEE is 2 and rest is delivery
                                     const dbPlatform = order.platform_fee;
                                     const dbDelivery = order.delivery_charge;
 
-                                    const displayPlatform = dbPlatform !== undefined && dbPlatform !== null ? dbPlatform : (totalFees > 0 ? 2 : 0);
-                                    const displayDelivery = dbDelivery !== undefined && dbDelivery !== null ? dbDelivery : (totalFees - displayPlatform);
+                                    // Use DB value if exists, else use dynamic setting as fallback
+                                    const displayPlatform = dbPlatform !== undefined && dbPlatform !== null ? dbPlatform : dynamicFees.platform;
+                                    const displayDelivery = dbDelivery !== undefined && dbDelivery !== null ? dbDelivery : (itemTotal > dynamicFees.freeAbove ? 0 : dynamicFees.delivery);
 
                                     return (
                                         <>

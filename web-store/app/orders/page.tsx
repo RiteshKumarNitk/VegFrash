@@ -39,6 +39,8 @@ export default function OrdersPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [printDate, setPrintDate] = useState('');
+    const [riders, setRiders] = useState<any[]>([]);
+    const [assigningLoading, setAssigningLoading] = useState<string | null>(null);
 
     useEffect(() => {
         setPrintDate(new Date().toLocaleString());
@@ -130,7 +132,16 @@ export default function OrdersPage() {
         return 'new_request';
     };
 
-    useEffect(() => { fetchOrders(); }, []);
+    const fetchRiders = async () => {
+        const supabase = createClient();
+        const { data } = await supabase.from('delivery_partners').select('*').eq('is_online', true);
+        if (data) setRiders(data);
+    };
+
+    useEffect(() => {
+        fetchOrders();
+        fetchRiders();
+    }, []);
 
     // --- Logic ---
     const filteredOrders = useMemo(() => {
@@ -201,6 +212,24 @@ export default function OrdersPage() {
             alert(`Update Failed: ${error.message || JSON.stringify(error)}`);
             fetchOrders(); // Revert on error
         }
+    };
+    const assignRider = async (orderId: string, riderId: string) => {
+        setAssigningLoading(orderId);
+        const supabase = createClient();
+
+        const { error } = await supabase.from('orders').update({
+            rider_id: riderId,
+            rider_assigned_at: new Date().toISOString(),
+            status: 'out_for_delivery'
+        }).eq('id', orderId);
+
+        if (error) {
+            alert(`Assignment Failed: ${error.message}`);
+        } else {
+            // Success - refresh list
+            fetchOrders();
+        }
+        setAssigningLoading(null);
     };
 
     return (
@@ -433,6 +462,31 @@ ${selectedOrder.items.map((i: any) => `- ${i.name} (${i.weight}) x${i.quantity}`
                                     >
                                         <Share2 size={16} /> Send to Driver (WA)
                                     </button>
+
+                                    {/* NEW: Rider Assignment UI */}
+                                    <div className="mt-4 border-t border-gray-100 pt-4">
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Assign Delivery Partner</label>
+                                        <div className="flex flex-col gap-2">
+                                            <select
+                                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                                                onChange={(e) => {
+                                                    if (e.target.value) assignRider(selectedOrder.id, e.target.value);
+                                                }}
+                                                defaultValue=""
+                                                disabled={assigningLoading === selectedOrder.id}
+                                            >
+                                                <option value="" disabled>Select Online Rider...</option>
+                                                {riders.map(r => (
+                                                    <option key={r.id} value={r.id}>
+                                                        {r.full_name} ({r.vehicle_type || 'Rider'})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {riders.length === 0 && (
+                                                <p className="text-[10px] text-red-500 italic">No riders currently online.</p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

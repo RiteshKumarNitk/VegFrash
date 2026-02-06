@@ -39,8 +39,8 @@ export default async function Home() {
     }
   });
 
-  // Display all categories
-  const activeCategories = categories;
+  // Display only categories that have products with stock
+  const activeCategories = categories.filter(cat => productsByCategory[cat.id]?.length > 0);
 
   return (
     <main className={`min-h-screen bg-white pb-24`}>

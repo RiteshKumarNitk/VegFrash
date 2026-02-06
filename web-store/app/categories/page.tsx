@@ -48,20 +48,30 @@ export default function CategoriesPage() {
     };
 
     const handleSubmit = async () => {
-        if (!formData.name || !formData.slug) return alert('Name and Slug required');
+        if (!formData.name || !formData.slug) return toast.error('Name and Slug are required');
+        setUploading(true); // Reuse uploading for general loading
 
-        if (editingId) {
-            // Update
-            const { error } = await supabase.from('categories').update(formData).eq('id', editingId);
-            if (error) alert('Error updating: ' + error.message);
-        } else {
-            // Create
-            const { error } = await supabase.from('categories').insert([formData]);
-            if (error) alert('Error creating: ' + error.message);
+        try {
+            if (editingId) {
+                // Update
+                const { error } = await supabase.from('categories').update(formData).eq('id', editingId);
+                if (error) throw error;
+                toast.success('Category updated successfully!');
+            } else {
+                // Create
+                const { error } = await supabase.from('categories').insert([formData]);
+                if (error) throw error;
+                toast.success('Category created successfully!');
+            }
+
+            resetForm();
+            await fetchCategories();
+        } catch (error: any) {
+            console.error('Submit error:', error);
+            toast.error(error.message || 'Failed to save category');
+        } finally {
+            setUploading(false);
         }
-
-        resetForm();
-        fetchCategories();
     };
 
     const handleEdit = (cat: any) => {
@@ -72,8 +82,16 @@ export default function CategoriesPage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure? This might break products linked to this category.')) return;
-        const { error } = await supabase.from('categories').delete().eq('id', id);
-        if (!error) fetchCategories();
+
+        try {
+            const { error } = await supabase.from('categories').delete().eq('id', id);
+            if (error) throw error;
+            toast.success('Category deleted successfully!');
+            await fetchCategories();
+        } catch (error: any) {
+            console.error('Delete error:', error);
+            toast.error(error.message || 'Failed to delete category');
+        }
     };
 
     const resetForm = () => {

@@ -40,45 +40,44 @@ export default function Footer() {
                         <h3 className="text-white font-bold text-lg mb-6">Quick Links</h3>
                         <ul className="space-y-3 text-sm">
                             <li><Link href="/" className="hover:text-brand transition-colors">Home</Link></li>
-                            <li><Link href="/about" className="hover:text-brand transition-colors">About Us</Link></li>
-                            <li><Link href="/shop" className="hover:text-brand transition-colors">Shop All</Link></li>
-                            <li><Link href="/contact" className="hover:text-brand transition-colors">Contact Support</Link></li>
+                            <li><Link href="/about" className="hover:text-brand transition-colors">About VegFrash</Link></li>
+                            <li><Link href="/contact" className="hover:text-brand transition-colors">Help & Support</Link></li>
+                            <li><Link href="/account" className="hover:text-brand transition-colors">My Account</Link></li>
                         </ul>
                     </div>
 
                     {/* Categories */}
                     <div>
-                        <h3 className="text-white font-bold text-lg mb-6">Categories</h3>
+                        <h3 className="text-white font-bold text-lg mb-6">Popular Categories</h3>
                         <ul className="space-y-3 text-sm">
-                            <li><Link href="/search?q=vegetables" className="hover:text-brand transition-colors">Fresh Vegetables</Link></li>
-                            <li><Link href="/search?q=fruits" className="hover:text-brand transition-colors">Seasonal Fruits</Link></li>
-                            <li><Link href="/search?q=organic" className="hover:text-brand transition-colors">Organic Produce</Link></li>
-                            <li><Link href="/search?q=deals" className="hover:text-brand transition-colors">Daily Deals</Link></li>
+                            <li><Link href="/category/vegetables" className="hover:text-brand transition-colors">Fresh Vegetables</Link></li>
+                            <li><Link href="/category/fruits" className="hover:text-brand transition-colors">Seasonal Fruits</Link></li>
+                            <li><Link href="/category/dairy-bread-eggs" className="hover:text-brand transition-colors">Dairy & Eggs</Link></li>
+                            <li><Link href="/category/snacks-munchies" className="hover:text-brand transition-colors">Snacks & Munchies</Link></li>
                         </ul>
                     </div>
 
                     {/* Newsletter */}
                     <div>
-                        <h3 className="text-white font-bold text-lg mb-6">Stay Updated</h3>
-                        <p className="text-sm text-slate-400 mb-4">Subscribe to our newsletter for latest updates and offers.</p>
-                        <div className="flex">
-                            <input
-                                type="email"
-                                placeholder="Enter email"
-                                className="bg-slate-800 border-none rounded-l-lg px-4 py-2.5 text-sm w-full focus:ring-1 focus:ring-brand outline-none"
-                            />
-                            <button className="bg-brand text-white px-4 rounded-r-lg hover:bg-brand-dark transition-colors">
-                                <ArrowRight size={18} />
-                            </button>
+                        <h3 className="text-white font-bold text-lg mb-6">Download Our App</h3>
+                        <p className="text-sm text-slate-400 mb-6">Experience the fastest delivery. Coming soon to Play Store & App Store.</p>
+                        <div className="flex gap-3">
+                            <div className="bg-slate-800 px-4 py-2 rounded-xl flex items-center gap-3 border border-slate-700">
+                                <span className="text-xl">🤖</span>
+                                <div className="text-left">
+                                    <p className="text-[10px] uppercase font-bold text-slate-500">Get it on</p>
+                                    <p className="text-xs font-bold text-white">Google Play</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-                    <p>&copy; 2026 VegFrash Inc. All rights reserved.</p>
+                    <p>&copy; 2026 VegFrash Powered by Freshness. All rights reserved.</p>
                     <div className="flex gap-6">
-                        <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
-                        <Link href="/terms" className="hover:text-white">Terms of Service</Link>
+                        <Link href="/privacy" className="hover:text-white transition-colors underline-offset-4 hover:underline">Privacy Policy</Link>
+                        <Link href="/terms" className="hover:text-white transition-colors underline-offset-4 hover:underline">Terms of Service</Link>
                     </div>
                 </div>
             </div>

@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { CartProvider } from "@/context/CartContext";
 import BottomNav from "@/components/ui/BottomNav";
 import Footer from "@/components/ui/Footer";
+import { getDarkVariant, getLightVariant } from "@/lib/colors";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,18 +28,38 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const headersList = await headers();
-  const primary = headersList.get("X-Theme-Primary") || "#00BFA5";
-  const secondary = headersList.get("X-Theme-Secondary") || "#FFD700";
-  const accent = headersList.get("X-Theme-Accent") || "#E65100";
-  const gradient = headersList.get("X-Theme-Gradient") || "linear-gradient(135deg, #00BFA5, #00897B)";
+  const primary = headersList.get("X-Theme-Primary") || "#0C831F";
+  const gradient = headersList.get("X-Theme-Gradient") || "from-orange-500 via-red-500 to-yellow-500";
+  const isFestival = headersList.get("X-Theme-Festival") === 'true';
+
+  // Compute variants
+  const primaryDark = getDarkVariant(primary);
+  const primaryLight = getLightVariant(primary);
 
   return (
     <html lang="en" style={{
       "--theme-primary": primary,
-      "--theme-secondary": secondary,
-      "--theme-accent": accent,
-      "--theme-gradient": gradient,
+      "--theme-primary-dark": primaryDark,
+      "--theme-primary-light": primaryLight,
+      "--theme-gradient-raw": gradient,
+      "--theme-is-festival": isFestival ? '1' : '0',
     } as React.CSSProperties}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="VegFrash" />
+        <meta name="theme-color" content={primary} />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js');
+              });
+            }
+          `
+        }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >

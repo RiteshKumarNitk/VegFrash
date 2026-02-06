@@ -35,40 +35,30 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // Fetch active theme
-    // We use a simple select. caching effectively is important here but for MVP we fetch.
-    // In production, we might want to use Vercel KV or Edge Config for this.
+    // Fetch active theme from site_settings (Unified Settings System)
     try {
-        const { data: theme } = await supabase
-            .from('active_themes')
-            .select('theme_id, festival_calendar(*)')
-            .eq('is_active', true)
+        const { data: themeSetting } = await supabase
+            .from('site_settings')
+            .select('value')
+            .eq('key', 'theme_config')
             .single()
 
-        // Force cast to any to handle Supabase join return type (which can be array or object depending on inference)
-        const themeData = theme as any;
-        // Check if festival_calendar is an array (sometimes happens with joins) or object
-        const festivalData = Array.isArray(themeData?.festival_calendar)
-            ? themeData?.festival_calendar[0]
-            : themeData?.festival_calendar;
-
-        const themeConfig = festivalData?.config_json;
+        const themeConfig = themeSetting?.value;
 
         if (themeConfig) {
-            response.headers.set('X-Theme-Primary', themeConfig.colors?.primary || '#00BFA5')
-            response.headers.set('X-Theme-Gradient', themeConfig.colors?.gradient || 'linear-gradient(135deg, #00BFA5, #00897B)')
-            response.headers.set('X-Theme-Bg', themeConfig.colors?.background || '#FFFFFF')
+            response.headers.set('X-Theme-Primary', themeConfig.brand_color || '#0C831F')
+            response.headers.set('X-Theme-Gradient', themeConfig.gradient || 'from-orange-500 via-red-500 to-yellow-500')
+            response.headers.set('X-Theme-Festival', themeConfig.festival_mode ? 'true' : 'false')
         } else {
-            // Fallback default
-            response.headers.set('X-Theme-Primary', '#00BFA5')
-            response.headers.set('X-Theme-Gradient', 'linear-gradient(135deg, #00BFA5, #00897B)')
-            response.headers.set('X-Theme-Bg', '#FFFFFF')
+            // Fallback default (VegFrash Green)
+            response.headers.set('X-Theme-Primary', '#0C831F')
+            response.headers.set('X-Theme-Gradient', 'from-orange-500 via-red-500 to-yellow-500')
+            response.headers.set('X-Theme-Festival', 'false')
         }
 
     } catch (e) {
-        // console.error("Theme fetch error", e)
         // Fallback on error
-        response.headers.set('X-Theme-Primary', '#00BFA5')
+        response.headers.set('X-Theme-Primary', '#0C831F')
     }
 
     return response

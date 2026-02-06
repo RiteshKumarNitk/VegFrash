@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 import {
     Store, Clock, ShieldCheck, Bell, CreditCard, Palette,
-    Save, Loader2
+    Save, Loader2, Upload, X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -13,6 +13,7 @@ export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('store');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [fetchError, setFetchError] = useState<any>(null);
     const [rawData, setRawData] = useState<any>(null);
@@ -21,13 +22,14 @@ export default function SettingsPage() {
     const [settings, setSettings] = useState<any>({
         profile: { name: '', phone: '', email: '', status: 'open' },
         hours: { open: '08:00', close: '22:00', holidays: false },
-        rules: { sla: 15, min_order: 100, delivery_msg: 'Delivery in 10 minutes', delivery_fee: 25, free_delivery_above: 99, handling_fee: 2 },
+        rules: { sla: 15, min_order: 100, delivery_msg: 'Delivery in early morning with Fresh vegetables', delivery_fee: 25, free_delivery_above: 99, handling_fee: 2 },
         notifications: { email: true, push: true },
         theme: {
             festival_mode: false,
             banner_text: 'GRAND FESTIVAL SALE IS LIVE! Get Flat 50% OFF',
             promo_code: 'FEST50',
-            gradient: 'from-orange-500 via-red-500 to-yellow-500'
+            gradient: 'from-orange-500 via-red-500 to-yellow-500',
+            announcement: ''
         }
     });
 
@@ -117,6 +119,7 @@ export default function SettingsPage() {
             }
 
             toast.success('Settings saved successfully');
+            await fetchSettings(); // Refresh to ensure data consistency
         } catch (error: any) {
             console.error('Save operation failed:', error);
             toast.error(error.message || 'Failed to save settings. Please try again.');
@@ -309,6 +312,84 @@ export default function SettingsPage() {
                         <div>
                             <h2 className="text-xl font-bold text-gray-800 border-b pb-4 mb-6">Theme & Branding</h2>
 
+                            {/* Banner Image Upload */}
+                            <div className="space-y-4 mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-200">
+                                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                    <Palette size={18} className="text-emerald-600" />
+                                    Custom Banner Image
+                                </h3>
+                                <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                                    Upload a custom banner image to replace the default hero gradients. Recommended size: 1920x600px.
+                                </p>
+
+                                <div className="flex flex-col gap-4">
+                                    {/* Preview */}
+                                    <div className="w-full aspect-[3/1] rounded-xl border-2 border-dashed border-slate-300 bg-white overflow-hidden relative flex items-center justify-center group">
+                                        {settings.theme.banner_url ? (
+                                            <>
+                                                <img src={settings.theme.banner_url} className="w-full h-full object-cover" alt="Banner Preview" />
+                                                <button
+                                                    onClick={() => updateSection('theme', 'banner_url', '')}
+                                                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <div className="text-center">
+                                                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2 text-slate-400">
+                                                    <Upload size={24} />
+                                                </div>
+                                                <p className="text-xs font-bold text-slate-400">No banner uploaded</p>
+                                            </div>
+                                        )}
+                                        {uploading && (
+                                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                                                <Loader2 className="animate-spin text-emerald-600" size={32} />
+                                                <span className="text-xs font-black text-emerald-700 uppercase tracking-widest">Uploading...</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <label className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-300 rounded-xl cursor-pointer hover:bg-slate-50 transition-all justify-center text-sm font-bold text-slate-700 shadow-sm active:scale-95">
+                                        <Upload size={18} />
+                                        {settings.theme.banner_url ? 'Change Banner' : 'Upload Banner'}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                if (!e.target.files || e.target.files.length === 0) return;
+                                                setUploading(true);
+                                                const file = e.target.files[0];
+                                                const fileExt = file.name.split('.').pop();
+                                                const fileName = `banner_${Date.now()}.${fileExt}`;
+
+                                                try {
+                                                    const { error: uploadError } = await supabase.storage
+                                                        .from('banners')
+                                                        .upload(fileName, file);
+
+                                                    if (uploadError) throw uploadError;
+
+                                                    const { data } = supabase.storage
+                                                        .from('banners')
+                                                        .getPublicUrl(fileName);
+
+                                                    updateSection('theme', 'banner_url', data.publicUrl);
+                                                    toast.success('Banner uploaded! Click Save to apply changes.');
+                                                } catch (err: any) {
+                                                    console.error('Upload failed:', err);
+                                                    toast.error('Upload failed: ' + err.message);
+                                                } finally {
+                                                    setUploading(false);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
                             {/* Standard Banner Config */}
                             <div className="space-y-4 mb-8">
                                 <h3 className="font-bold text-gray-700">Standard Homepage Banner</h3>
@@ -329,6 +410,17 @@ export default function SettingsPage() {
                                         onChange={e => updateSection('theme', 'standard_subtitle', e.target.value)}
                                         className="w-full px-4 py-2 rounded-lg bg-gray-50 border border-gray-200 outline-none h-20 resize-none"
                                         placeholder="e.g. Get farm-fresh vegetables..."
+                                    />
+                                </div>
+                                <div className="mt-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                                    <label className="block text-sm font-bold text-emerald-800 mb-1">📢 Global Announcement Bar (Scrolling)</label>
+                                    <p className="text-[10px] text-emerald-600/80 mb-3 italic">This message scrolls at the very top of the customer website. Leave empty to hide.</p>
+                                    <input
+                                        type="text"
+                                        value={settings.theme.announcement || ''}
+                                        onChange={e => updateSection('theme', 'announcement', e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl bg-white border border-emerald-200 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 font-medium text-slate-700"
+                                        placeholder="e.g. 📢 Flat 20% OFF on all organic vegetables this weekend! Use code: FRESH20"
                                     />
                                 </div>
                             </div>

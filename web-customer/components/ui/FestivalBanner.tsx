@@ -39,13 +39,22 @@ export default function FestivalBanner() {
     }, []);
 
     const isFestival = config?.festival_mode;
+    const bannerUrl = config?.banner_url;
+
     const gradient = isFestival
         ? `bg-gradient-to-r ${config.gradient || 'from-purple-600 via-pink-600 to-rose-600'}`
         : 'bg-gradient-to-r from-[#0C831F] to-[#15803d]';
 
 
     return (
-        <div className={`w-full relative overflow-hidden rounded-2xl shadow-xl my-6 min-h-[220px] lg:min-h-[280px] flex items-center px-6 lg:px-12 transition-all duration-500 ${gradient}`}>
+        <div
+            className={`w-full relative overflow-hidden rounded-2xl shadow-xl my-6 min-h-[220px] lg:min-h-[320px] flex items-center px-6 lg:px-12 transition-all duration-500 ${!bannerUrl ? gradient : 'bg-slate-100'}`}
+            style={bannerUrl ? {
+                backgroundImage: `url(${bannerUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+            } : {}}
+        >
 
             {/* Confetti / Sparkles Layer */}
             {isFestival && (
@@ -62,13 +71,6 @@ export default function FestivalBanner() {
                             }}
                         />
                     ))}
-                    <style jsx>{`
-                        @keyframes fall {
-                            0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
-                            100% { transform: translateY(300px) rotate(360deg); opacity: 0; }
-                        }
-                        .animate-fall { animation-name: fall; }
-                    `}</style>
                 </div>
             )}
 
@@ -90,60 +92,93 @@ export default function FestivalBanner() {
             </div>
 
             {/* Content Layer */}
-            <div className={`relative z-10 w-full flex flex-col items-start text-left ${isFestival ? 'items-center text-center' : ''}`}>
-                <div className=" bg-white/20 backdrop-blur-md border border-white/30 text-white text-[10px] font-bold tracking-widest uppercase rounded-full px-3 py-1 mb-4 shadow-sm inline-flex items-center gap-2">
-                    {isFestival ? <><Sparkles size={12} className="text-yellow-300" /> FESTIVAL OFFER</> : 'LIMITED TIME OFFER'}
-                </div>
-
-                <h2 className={`text-3xl lg:text-5xl font-black mb-4 tracking-tight leading-tight text-white drop-shadow-lg ${isFestival ? 'scale-105' : ''}`}>
+            <div className={`relative z-10 p-2 w-full flex flex-col items-start text-left ${isFestival ? 'items-center text-center' : ''}`}>
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 text-white text-[10px] lg:text-xs font-black tracking-[0.2em] uppercase rounded-full px-4 py-1.5 mb-6 shadow-xl inline-flex items-center gap-2 group cursor-default">
                     {isFestival ? (
                         <>
-                            {config.banner_text || 'Festival Sale'}
-                            <div className="text-yellow-300 text-2xl lg:text-3xl mt-2 font-extrabold font-serif italic">
-                                ✨ Flat 50% OFF ✨
+                            <Sparkles size={14} className="text-yellow-300 animate-pulse" />
+                            <span className="bg-gradient-to-r from-yellow-200 to-white bg-clip-text text-transparent">FESTIVAL MEGA SALE</span>
+                        </>
+                    ) : (
+                        'EXCLUSIVELY FOR YOU'
+                    )}
+                </div>
+
+                <h2 className={`text-4xl lg:text-7xl font-black mb-6 tracking-tighter leading-[0.9] text-white drop-shadow-[0_10px_10px_rgba(0,0,0,0.3)] ${isFestival ? 'animate-float' : ''}`}>
+                    {isFestival ? (
+                        <>
+                            <span className="block">{config.banner_text || 'GRAND FESTIVAL SALE'}</span>
+                            <div className="text-yellow-400 text-3xl lg:text-5xl mt-3 font-extrabold italic font-serif flex items-center justify-center gap-3">
+                                <span className="opacity-50 tracking-[-0.1em]">-----</span>
+                                <span className="drop-shadow-glow">FLAT 50% OFF</span>
+                                <span className="opacity-50 tracking-[-0.1em]">-----</span>
                             </div>
                         </>
                     ) : (
                         <>
                             {(config?.standard_title || 'Freshness Delivered Fast.').split(' ').map((word: string, i: number) =>
-                                i === 1 ? <span key={i} className="text-yellow-300 mx-2">{word}</span> : <span key={i}>{word} </span>
+                                i === 1 ? <span key={i} className="text-yellow-300 mx-2">{word}</span> : <span key={i} className="inline-block">{word}&nbsp;</span>
                             )}
                         </>
                     )}
                 </h2>
 
-                <p className="text-lg text-white/90 mb-8 font-medium max-w-lg leading-relaxed hidden sm:block drop-shadow-md">
+                <p className="text-lg lg:text-xl text-white/80 mb-10 font-bold max-w-2xl leading-snug hidden sm:block drop-shadow-md">
                     {isFestival
-                        ? 'Celebrate with joy and huge savings! Get exclusive discounts on fresh fruits, sweets, and gift packs.'
+                        ? 'Celebrate with legendary savings! Stock up on farm-fresh essentials, sweets, and gift hampers with our biggest offer yet.'
                         : (config?.standard_subtitle || 'Get farm-fresh vegetables and daily essentials delivered to your doorstep in 10 minutes.')
                     }
                 </p>
 
                 {isFestival ? (
-                    <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/10 p-2 rounded-xl backdrop-blur-sm border border-white/20 shadow-2xl transform hover:scale-105 transition-transform duration-300">
-                        <div className="text-xs text-white/70 font-bold uppercase tracking-wider px-2">Use Code:</div>
-                        <div className="flex items-center gap-3 bg-white text-brand-dark px-4 py-2 rounded-lg font-mono font-bold text-lg border-2 border-dashed border-gray-300 cursor-copy active:scale-95 transition-transform"
+                    <div className="flex flex-col sm:flex-row items-center gap-6 bg-black/20 hover:bg-black/30 p-3 rounded-[2rem] backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all duration-300 group">
+                        <div className="flex -space-x-2 px-2">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="w-8 h-8 rounded-full border-2 border-white/20 bg-gradient-to-tr from-yellow-400 to-orange-500 flex items-center justify-center text-[10px] shadow-lg">🎁</div>
+                            ))}
+                        </div>
+                        <div className="text-[10px] text-white/60 font-black uppercase tracking-[0.2em] px-2 border-l border-white/10 hidden lg:block">Use Secret Code:</div>
+                        <div className="flex items-center gap-4 bg-white text-slate-900 px-8 py-3 rounded-2xl font-mono font-black text-2xl border-2 border-dashed border-slate-200 cursor-copy active:scale-95 transition-all shadow-inner group-hover:border-brand group-hover:shadow-brand/20"
                             onClick={() => {
-                                navigator.clipboard.writeText(config.promo_code);
-                                alert('Code Copied!');
+                                navigator.clipboard.writeText(config.promo_code || 'FEST50');
+                                alert('Promo Code Copied! 🎉');
                             }}
                         >
-                            {config.promo_code || 'FEST50'} <Copy size={16} className="text-gray-400" />
+                            {config.promo_code || 'FEST50'} <Copy size={20} className="text-slate-300 group-hover:text-brand" />
                         </div>
                     </div>
                 ) : (
-                    <button className="px-8 py-3 bg-white text-green-700 font-bold text-sm lg:text-base rounded-lg shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300">
-                        Shop Now
+                    <button className="px-10 py-4 bg-white text-[#0C831F] font-black text-lg rounded-2xl shadow-[0_15px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-all duration-300">
+                        Shop Collection
                     </button>
                 )}
             </div>
 
             {/* Illustration */}
-            <div className={`absolute right-4 lg:right-16 bottom-0 transition-all duration-700 hidden md:block ${isFestival ? 'scale-125 rotate-6' : 'rotate-12'}`}>
-                <div className="text-[8rem] lg:text-[10rem] drop-shadow-2xl filter hover:brightness-110 transition-all">
-                    {isFestival ? '🎁' : '🥦'}
+            <div className={`absolute right-4 lg:right-24 bottom-0 transition-all duration-1000 hidden md:block ${isFestival ? 'scale-150 -rotate-12 translate-y-4' : 'rotate-12 translate-y-8'}`}>
+                <div className="text-[10rem] lg:text-[14rem] drop-shadow-[0_20px_50px_rgba(0,0,0,0.4)] filter hover:brightness-125 transition-all animate-float-slow">
+                    {isFestival ? '🎉' : '🍉'}
                 </div>
             </div>
+
+            <style jsx global>{`
+                @keyframes fall {
+                    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+                    100% { transform: translateY(300px) rotate(360deg); opacity: 0; }
+                }
+                @keyframes float {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                }
+                @keyframes float-slow {
+                    0%, 100% { transform: translateY(0) rotate(-12deg); }
+                    50% { transform: translateY(-20px) rotate(-5deg); }
+                }
+                .animate-fall { animation-name: fall; }
+                .animate-float { animation: float 3s ease-in-out infinite; }
+                .animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
+                .drop-shadow-glow { filter: drop-shadow(0 0 10px rgba(255, 234, 0, 0.5)); }
+            `}</style>
         </div>
     );
 }

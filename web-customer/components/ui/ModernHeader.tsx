@@ -1,5 +1,5 @@
 'use client';
-import { Search, User, MapPin, ChevronDown, ShoppingCart, Package, LogOut, Loader2, X, MapPin as MapIcon } from 'lucide-react';
+import { Search, User, MapPin, ChevronDown, ShoppingCart, Package, LogOut, Loader2, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -145,6 +145,18 @@ export default function ModernHeader({ deviceType }: { deviceType: string }) {
 
     return (
         <>
+            {/* Announcement Marquee */}
+            {festivalTheme?.announcement && (
+                <div className="bg-brand-dark/5 text-brand-dark text-[10px] md:text-xs font-bold py-2 overflow-hidden border-b border-brand/5">
+                    <div className="animate-marquee whitespace-nowrap inline-block">
+                        <span className="px-4">📢 {festivalTheme.announcement}</span>
+                        <span className="px-4">📢 {festivalTheme.announcement}</span>
+                        <span className="px-4">📢 {festivalTheme.announcement}</span>
+                        <span className="px-4">📢 {festivalTheme.announcement}</span>
+                    </div>
+                </div>
+            )}
+
             {/* Festival Top Bar */}
             {festivalTheme?.festival_mode && (
                 <div className={`bg-gradient-to-r ${festivalTheme.gradient || 'from-orange-500 via-red-500 to-yellow-500'} text-white text-xs font-bold text-center py-2 px-4 shadow-sm relative overflow-hidden`}>
@@ -228,19 +240,6 @@ export default function ModernHeader({ deviceType }: { deviceType: string }) {
 
                         {/* Nav Actions */}
                         <div className="flex items-center gap-6 shrink-0">
-                            <div className="flex flex-col items-end text-right hidden xl:block">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">Delivering to</span>
-                                <div
-                                    onClick={!user ? detectLocation : undefined}
-                                    className={`flex items-center gap-1 text-xs font-bold text-slate-700 cursor-pointer hover:text-brand ${!user ? 'animate-pulse-slow' : ''}`}
-                                >
-                                    {locLoading ? <Loader2 size={12} className="animate-spin" /> : <MapPin size={12} className="text-brand" />}
-                                    <span className="max-w-[150px] truncate">{location.text}</span>
-                                    <ChevronDown size={12} />
-                                </div>
-                            </div>
-
-                            <div className="h-8 w-px bg-slate-200 mx-2"></div>
 
                             <Link href="/cart" className="relative p-2 text-slate-600 hover:text-brand transition-colors">
                                 <ShoppingCart size={24} />
@@ -261,16 +260,12 @@ export default function ModernHeader({ deviceType }: { deviceType: string }) {
                     {/* Mobile Header */}
                     <div className="lg:hidden flex flex-col pb-3">
                         <div className="flex items-center justify-between h-14">
-                            <div className="flex flex-col" onClick={detectLocation}>
-                                <div className="flex items-center gap-1 font-bold text-slate-800">
-                                    <MapPin size={16} className="text-brand" />
-                                    <span className="text-sm max-w-[200px] truncate">{locLoading ? 'Detecting...' : location.text.split(',')[0]}</span>
-                                    <ChevronDown size={14} className="text-slate-400" />
+                            <Link href="/" className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center shadow-md">
+                                    <Package className="text-white" size={18} />
                                 </div>
-                                <p className="text-[10px] text-slate-500 pl-5 truncate max-w-[250px]">
-                                    {locLoading ? 'Please wait...' : (location.text === 'Select Location' ? 'Tap to detect location' : location.text)}
-                                </p>
-                            </div>
+                                <span className="text-lg font-black text-slate-900 tracking-tight">VegFrash</span>
+                            </Link>
                             <Link href="/account" className="p-2 bg-slate-50 rounded-full text-slate-600">
                                 <User size={20} />
                             </Link>
