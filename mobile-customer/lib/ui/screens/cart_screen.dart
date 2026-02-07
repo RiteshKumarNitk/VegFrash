@@ -28,10 +28,12 @@ class CartScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
-            onPressed: () => Get.back(),
-          ),
+          leading: Navigator.canPop(context) 
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B), size: 20),
+                onPressed: () => Get.back(),
+              )
+            : null,
           title: Text(
             "My Basket",
             style: GoogleFonts.outfit(

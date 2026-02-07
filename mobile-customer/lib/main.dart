@@ -6,6 +6,8 @@ import 'controllers/theme_controller.dart';
 import 'controllers/cart_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'ui/screens/home_screen.dart';
+import 'ui/screens/main_screen.dart';
+import 'controllers/navigation_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,13 +33,14 @@ class MyApp extends StatelessWidget {
     final themeCtrl = Get.put(ThemeController());
     Get.put(AuthController());
     Get.put(CartController());
+    Get.put(NavigationController());
 
     return Obx(() {
       return GetMaterialApp(
         title: 'VegFrash',
         debugShowCheckedModeBanner: false,
         theme: themeCtrl.currentTheme.value,
-        home: const HomeScreen(),
+        home: const MainScreen(),
       );
     });
   }

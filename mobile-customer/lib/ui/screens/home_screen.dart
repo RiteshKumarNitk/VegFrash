@@ -3,12 +3,14 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../controllers/cart_controller.dart';
 import 'cart_screen.dart';
 import 'my_orders_screen.dart';
 import 'add_address_screen.dart';
 import 'login_screen.dart';
 import 'product_details_screen.dart';
+import '../../controllers/navigation_controller.dart';
 import '../widgets/festival_banner.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -21,10 +23,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _supabase = Supabase.instance.client;
   final _cartCtrl = Get.find<CartController>();
+  final _navCtrl = Get.find<NavigationController>();
   
   List<dynamic> categories = [];
   List<dynamic> products = [];
   bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
@@ -34,21 +38,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchData() async {
     try {
-      final responses = await Future.wait([
-        _supabase.from('categories').select('*').order('name'),
-        _supabase.from('products').select('*, image_url:image').eq('in_stock', true),
-      ]);
+      debugPrint("DEBUG: Fetching categories and products...");
+      final catRes = await _supabase.from('categories').select('*').order('name');
+      debugPrint("DEBUG: Categories response: ${catRes.length} items");
+      
+      final prodRes = await _supabase.from('products').select('*, image_url:image');
+      debugPrint("DEBUG: Products raw response: ${prodRes.length} items");
+      
+      final prodList = List<dynamic>.from(prodRes);
+      if (prodList.isNotEmpty) {
+        debugPrint("DEBUG: First product keys: ${prodList[0].keys}");
+      }
 
       if (mounted) {
         setState(() {
-          categories = responses[0] as List<dynamic>;
-          products = responses[1] as List<dynamic>;
+          categories = catRes as List<dynamic>;
+          products = prodRes as List<dynamic>;
           isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint("Error fetching home data: $e");
-      if (mounted) setState(() => isLoading = false);
+      debugPrint("DEBUG: Error fetching home data: $e");
+      if (mounted) {
+        setState(() {
+          errorMessage = e.toString();
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -61,28 +77,52 @@ class _HomeScreenState extends State<HomeScreen> {
         physics: const BouncingScrollPhysics(),
         slivers: [
           _buildAppBar(),
+          if (dotenv.env['SUPABASE_URL'] != null)
+             SliverToBoxAdapter(
+              child: Container(
+                color: Colors.blue.withOpacity(0.05),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Text(
+                  "Connected: ${dotenv.env['SUPABASE_URL']}",
+                  style: const TextStyle(color: Colors.blue, fontSize: 10),
+                ),
+              ),
+            ),
+          if (errorMessage != null)
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.redAccent.withOpacity(0.1),
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  "Debug Error: $errorMessage",
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                ),
+              ),
+            ),
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 12),
-                FestivalBanner(),
-                const SizedBox(height: 24),
-                _buildSectionHeader("Shop by Category"),
-                isLoading ? _buildCategoryShimmer() : _buildCategoryList(),
-                const SizedBox(height: 32),
-                _buildSectionHeader("Fresh Pickups"),
+                _buildSectionHeader("Your Go-to Items"),
                 isLoading ? _buildProductShimmer() : _buildProductList(),
+                const SizedBox(height: 24),
+                FestivalBanner(),
+                const SizedBox(height: 32),
+                _buildSectionHeader("Explore By Categories"),
+                isLoading ? _buildCategoryShimmer() : _buildCategoryList(),
+                const SizedBox(height: 20),
+                _buildOfferPill(),
                 const SizedBox(height: 100), // Bottom padding for cart summary
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: _buildCartSummary(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: null,
     );
   }
+
 
   Widget _buildDrawer() {
     final user = _supabase.auth.currentUser;
@@ -157,86 +197,134 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAppBar() {
-    return SliverAppBar(
-      floating: true,
-      backgroundColor: Colors.white,
-      elevation: 0,
-      centerTitle: false,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E293B)),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-        ),
-      ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "VegFrash",
-            style: GoogleFonts.outfit(
-              color: const Color(0xFF0C831F),
-              fontWeight: FontWeight.w900,
-              fontSize: 26,
-            ),
-          ),
-          Row(
+    return SliverPadding(
+      padding: EdgeInsets.zero,
+      sliver: SliverAppBar(
+        floating: true,
+        pinned: true,
+        backgroundColor: const Color(0xFF3C0B69), // Zepto Purple
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        toolbarHeight: 120,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
             children: [
-              const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF64748B)),
-              const SizedBox(width: 4),
-              Text(
-                "Koramangala, Bangalore",
-                style: GoogleFonts.outfit(
-                  color: const Color(0xFF64748B),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  const Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              "HOME - Koramangala, Bangalore",
+                              style: GoogleFonts.outfit(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Colors.white),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person_outline_rounded, color: Colors.white, size: 22),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search_rounded, color: Colors.grey, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      "Search \"milk\"",
+                      style: GoogleFonts.outfit(
+                        color: Colors.grey,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.mic_none_rounded, color: Colors.grey, size: 20),
+                  ],
                 ),
               ),
-              const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Color(0xFF64748B)),
             ],
           ),
-        ],
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(40),
+          child: Container(
+            width: double.infinity,
+            color: const Color(0xFFE91E63), // Pinkish Red from Zepto
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              "Zapping Delivery in 14 mins",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 12,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ),
       ),
-      actions: [
-        CircleAvatar(
-          backgroundColor: const Color(0xFFF1F5F9),
-          child: IconButton(
-            icon: const Icon(Icons.search_rounded, color: Color(0xFF1E293B)),
-            onPressed: () {},
-          ),
-        ),
-        const SizedBox(width: 12),
-        CircleAvatar(
-          backgroundColor: const Color(0xFFF1F5F9),
-          child: IconButton(
-            icon: const Icon(Icons.person_outline_rounded, color: Color(0xFF1E293B)),
-            onPressed: () => _checkAuth(),
-          ),
-        ),
-        const SizedBox(width: 16),
-      ],
     );
   }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
             style: GoogleFonts.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFF1E293B),
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Colors.black,
             ),
           ),
-          Text(
-            "See all",
-            style: GoogleFonts.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF0C831F),
+          GestureDetector(
+            onTap: () => _navCtrl.changeIndex(1), // Switch to Categories tab
+            child: Row(
+              children: [
+                Text(
+                  "See All",
+                  style: GoogleFonts.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFE91E63),
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFFE91E63)),
+              ],
             ),
           ),
         ],
@@ -245,43 +333,67 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryList() {
-    return SizedBox(
-      height: 120,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: categories.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 16,
+        ),
         itemBuilder: (context, index) {
           final cat = categories[index];
-          return Container(
-            width: 85,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+          final List<Color> bgColors = [
+            const Color(0xFFF5F3FF),
+            const Color(0xFFFFF7ED),
+            const Color(0xFFEFF6FF),
+            const Color(0xFFECFDF5),
+          ];
+          final bgColor = bgColors[index % bgColors.length];
+
+          return GestureDetector(
+            onTap: () => _navCtrl.changeIndex(1), // Switch to Categories tab
             child: Column(
               children: [
-                Container(
-                  width: 65,
-                  height: 65,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    cat['image'] ?? '🥗',
-                    style: const TextStyle(fontSize: 30),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.black.withOpacity(0.02)),
+                    ),
+                    alignment: Alignment.center,
+                    child: cat['image'] != null && cat['image'].toString().startsWith('http')
+                        ? Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Image.network(
+                              cat['image'],
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Text("🥗", style: TextStyle(fontSize: 32)),
+                            ),
+                          )
+                        : Text(
+                            cat['image'] ?? '🥗',
+                            style: const TextStyle(fontSize: 32),
+                          ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   cat['name'],
                   textAlign: TextAlign.center,
                   maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF334155),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF1E293B),
+                    height: 1.1,
                   ),
                 ),
               ],
@@ -292,148 +404,215 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildProductList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: products.length,
-      itemBuilder: (context, index) {
-        final p = products[index];
-        return GestureDetector(
-          onTap: () => Get.to(() => ProductDetailsScreen(product: p), transition: Transition.fadeIn),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFF1F5F9)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
+  Widget _buildOfferPill() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF9C27B0).withOpacity(0.9), // Purple offer bar
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.settings_suggest_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Get 10% Off on adding items worth ₹999 to cart!",
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                ),
+              ),
             ),
-            child: Row(
-              children: [
-                Hero(
-                  tag: "product_image_${p['id']}",
-                  child: Container(
-                    width: 75,
-                    height: 75,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    alignment: Alignment.center,
-                    child: p['image_url'] != null
-                        ? Image.network(p['image_url'], fit: BoxFit.cover)
-                        : const Text("🥦", style: TextStyle(fontSize: 32)),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        p['name'],
-                        style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                          color: const Color(0xFF1E293B),
-                        ),
-                      ),
-                      Text(
-                        "${p['weight'] ?? '1'} ${p['unit'] ?? 'kg'} • Fresh",
-                        style: GoogleFonts.outfit(
-                          color: const Color(0xFF64748B),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "₹${p['price']}",
-                        style: GoogleFonts.outfit(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                          color: const Color(0xFF0C831F),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  children: [
-                    Obx(() {
-                      bool isInCart = _cartCtrl.items.containsKey(p['id'].toString());
-                      if (isInCart) {
-                        final item = _cartCtrl.items[p['id'].toString()]!;
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0C831F),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              IconButton(
-                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                icon: const Icon(Icons.remove, color: Colors.white, size: 16),
-                                onPressed: () => _cartCtrl.decrement(p['id'].toString()),
-                              ),
-                              Text(
-                                item.quantity.value.toStringAsFixed(item.unit == 'kg' ? 1 : 0),
-                                style: GoogleFonts.outfit(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              IconButton(
-                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                icon: const Icon(Icons.add, color: Colors.white, size: 16),
-                                onPressed: () => _cartCtrl.increment(p['id'].toString()),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      return ElevatedButton(
-                        onPressed: () {
-                          _cartCtrl.addItem(
-                            id: p['id'].toString(),
-                            name: p['name'],
-                            price: p['price'].toDouble(),
-                            unit: p['unit'] ?? 'kg',
-                            image: p['image_url'],
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF0C831F),
-                          elevation: 0,
-                          side: const BorderSide(color: Color(0xFF0C831F), width: 1.5),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        child: Text(
-                          "ADD",
-                          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14),
-                        ),
-                      );
-                    }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductList() {
+    return SizedBox(
+      height: 250,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: products.length,
+        itemBuilder: (context, index) {
+          final p = products[index];
+          return Container(
+            width: 160,
+            margin: const EdgeInsets.only(right: 16),
+            child: GestureDetector(
+              onTap: () => Get.to(() => ProductDetailsScreen(product: p), transition: Transition.fadeIn),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade100),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
                   ],
                 ),
-              ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Image & Discount Badge
+                    Expanded(
+                      flex: 3,
+                      child: Stack(
+                        children: [
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Hero(
+                                tag: "product_image_${p['id']}",
+                                child: p['image_url'] != null
+                                    ? Image.network(p['image_url'], fit: BoxFit.contain)
+                                    : const Text("🥦", style: TextStyle(fontSize: 40)),
+                              ),
+                            ),
+                          ),
+                          if (p['old_price'] != null && p['old_price'] > p['price'])
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFE91E63),
+                                  borderRadius: BorderRadius.only(
+                                    bottomLeft: Radius.circular(8),
+                                    topRight: Radius.circular(16),
+                                  ),
+                                ),
+                                child: Text(
+                                  "${(((p['old_price'] - p['price']) / p['old_price']) * 100).toStringAsFixed(0)}% off",
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Product Info
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              p['name'],
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                                color: const Color(0xFF1E293B),
+                                height: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "${p['weight'] ?? '1'} ${p['unit'] ?? 'kg'}",
+                              style: GoogleFonts.outfit(
+                                color: const Color(0xFF94A3B8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (p['old_price'] != null)
+                                      Text(
+                                        "₹${p['old_price']}",
+                                        style: GoogleFonts.outfit(
+                                          decoration: TextDecoration.lineThrough,
+                                          color: const Color(0xFF94A3B8),
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    Text(
+                                      "₹${p['price']}",
+                                      style: GoogleFonts.outfit(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 15,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    _cartCtrl.addItem(
+                                      id: p['id'].toString(),
+                                      name: p['name'],
+                                      price: p['price'].toDouble(),
+                                      unit: p['unit'] ?? 'kg',
+                                      image: p['image_url'],
+                                    );
+                                    Get.snackbar(
+                                      "Added to Cart",
+                                      "${p['name']} added to your basket",
+                                      snackPosition: SnackPosition.BOTTOM,
+                                      backgroundColor: const Color(0xFF3C0B69),
+                                      colorText: Colors.white,
+                                      duration: const Duration(seconds: 1),
+                                      margin: const EdgeInsets.all(12),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.grey.shade200),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        )
+                                      ],
+                                    ),
+                                    child: const Icon(Icons.add, color: Color(0xFFE91E63), size: 20),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -482,63 +661,66 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCartSummary() {
     return Obx(() {
       if (_cartCtrl.items.isEmpty) return const SizedBox.shrink();
-      return GestureDetector(
-        onTap: () => Get.to(() => const CartScreen(), transition: Transition.cupertino),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0C831F),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0C831F).withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              )
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${_cartCtrl.uniqueItemCount} ITEMS",
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: GestureDetector(
+          onTap: () => Get.to(() => const CartScreen(), transition: Transition.cupertino),
+          child: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0C831F),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                )
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${_cartCtrl.uniqueItemCount} ITEMS",
+                      style: GoogleFonts.outfit(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                  Text(
-                    "₹${_cartCtrl.subtotal.toStringAsFixed(0)} plus taxes",
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
+                    Text(
+                      "₹${_cartCtrl.subtotal.toStringAsFixed(0)}",
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    "View Cart",
-                    style: GoogleFonts.outfit(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                  ],
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Text(
+                      "View Cart",
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.shopping_basket_rounded, color: Colors.white, size: 20),
-                ],
-              ),
-            ],
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_right_rounded, color: Colors.white, size: 28),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );

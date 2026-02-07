@@ -63,18 +63,18 @@ class FestivalBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      "FESTIVAL SPECIAL",
+                      config.promoCode.isNotEmpty ? "USE: ${config.promoCode}" : "SPECIAL OFFER",
                       style: GoogleFonts.outfit(
                         color: Colors.white,
                         fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
                       ),
                     ),
                   ),
@@ -84,24 +84,26 @@ class FestivalBanner extends StatelessWidget {
                       config.headline.isNotEmpty ? config.headline : "Unbeatable\nFreshness",
                       style: GoogleFonts.outfit(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
-                        shadows: [const Shadow(color: Colors.black26, blurRadius: 4)],
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: () {},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: themeCtrl.currentTheme.value.primaryColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      foregroundColor: _hexToColor(config.colors.primary),
                       elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: Text("Explore Now", style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 13)),
+                    onPressed: () {},
+                    child: Text(
+                      "Shop Now",
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 13),
+                    ),
                   ),
                 ],
               ),
@@ -193,5 +195,13 @@ class FestivalBanner extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Color _hexToColor(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) {
+      hex = 'FF' + hex;
+    }
+    return Color(int.parse(hex, radix: 16));
   }
 }

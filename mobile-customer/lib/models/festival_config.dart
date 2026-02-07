@@ -7,6 +7,7 @@ class FestivalConfig {
   final FestivalAssets assets;
   final String? particleEffect;
   final String headline;
+  final String promoCode;
 
   FestivalConfig({
     required this.id,
@@ -17,6 +18,7 @@ class FestivalConfig {
     required this.assets,
     this.particleEffect,
     required this.headline,
+    required this.promoCode,
   });
 
   factory FestivalConfig.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class FestivalConfig {
       assets: FestivalAssets.fromJson(json['assets']),
       particleEffect: json['particle_effect'],
       headline: json['headline'] ?? '',
+      promoCode: json['promoCode'] ?? json['promo_code'] ?? '',
     );
   }
 }
