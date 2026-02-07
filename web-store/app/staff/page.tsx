@@ -97,12 +97,20 @@ export default function StaffPage() {
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">Manage roles and permissions for your operations team.</p>
                 </div>
-                <button
-                    onClick={() => setIsAdding(!isAdding)}
-                    className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl active:scale-95"
-                >
-                    <Plus size={20} /> Add Member
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => window.open('/rider', '_blank')}
+                        className="bg-white text-slate-900 border-2 border-slate-100 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                    >
+                        <Truck size={20} className="text-emerald-500" /> Rider Terminal
+                    </button>
+                    <button
+                        onClick={() => setIsAdding(!isAdding)}
+                        className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl active:scale-95"
+                    >
+                        <Plus size={20} /> Add Member
+                    </button>
+                </div>
             </div>
 
             {/* Quick Stats */}

@@ -6,14 +6,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'controllers/theme_controller.dart';
 import 'ui/screens/login_screen.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Supabase (Use placeholder or real keys)
-  // For now we use placeholders, User needs to fill these in .env or here
+  // Load environment variables
+  await dotenv.load(fileName: "assets/.env");
+  
+  // Initialize Supabase
   await Supabase.initialize(
-    url: 'https://xyzcompany.supabase.co',
-    anonKey: 'public-anon-key',
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
   runApp(const MyApp());

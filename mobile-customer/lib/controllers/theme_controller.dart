@@ -56,7 +56,7 @@ class ThemeController extends GetxController {
     currentTheme.value = ThemeData(
       primaryColor: _hexToColor(config.colors.primary),
       scaffoldBackgroundColor: _hexToColor(config.colors.background),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: _hexToColor(config.colors.cardBackground),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),

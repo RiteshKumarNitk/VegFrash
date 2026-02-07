@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/theme_controller.dart';
 
 class FestivalBanner extends StatelessWidget {
@@ -12,106 +13,181 @@ class FestivalBanner extends StatelessWidget {
     return Obx(() {
       final config = themeCtrl.festivalConfig.value;
       
-      // Default State (No active festival)
-      if (config == null || !config.isActive) {
-        return Container(
-          margin: const EdgeInsets.all(16),
-          height: 160,
-          decoration: BoxDecoration(
-            color: Colors.green.shade800,
-            borderRadius: BorderRadius.circular(16),
-            image: const DecorationImage(
-               image: NetworkImage('https://via.placeholder.com/800x400'), // Replace with real asset
-               fit: BoxFit.cover,
-               opacity: 0.6
-            )
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            "Fresh Veggies\nIn 10 Mins",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        );
+      // If no active festival, show a premium default banner
+      if (config == null) {
+        return _buildDefaultBanner();
       }
 
-      // Festival State
       return Container(
-        margin: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         height: 180,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          // Fallback gradient if image fails or loading
+          borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
-             colors: [
-                themeCtrl.currentTheme.value.primaryColor, 
-                themeCtrl.currentTheme.value.colorScheme.secondary
-             ],
-             begin: Alignment.topLeft,
-             end: Alignment.bottomRight,
+            colors: [
+              themeCtrl.currentTheme.value.primaryColor,
+              themeCtrl.currentTheme.value.colorScheme.secondary,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
           boxShadow: [
-             BoxShadow(
-                color: themeCtrl.currentTheme.value.primaryColor.withOpacity(0.4),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-             )
-          ]
+            BoxShadow(
+              color: themeCtrl.currentTheme.value.primaryColor.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
         ),
         child: Stack(
           children: [
-             // Background Image (if available in config)
-             if (config.assets.homeBanner.isNotEmpty)
-                ClipRRect(
-                   borderRadius: BorderRadius.circular(16),
-                   child: Image.network(
+            if (config.assets.homeBanner.isNotEmpty)
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.7,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.network(
                       config.assets.homeBanner,
-                      width: double.infinity,
-                      height: double.infinity,
                       fit: BoxFit.cover,
-                      errorBuilder: (_,__,___) => const SizedBox(), // Hide on error
-                   ),
+                      errorBuilder: (_, __, ___) => const SizedBox(),
+                    ),
+                  ),
                 ),
-                
-             // Overlay Content
-             Padding(
-               padding: const EdgeInsets.all(20.0),
-               child: Column(
-                 mainAxisAlignment: MainAxisAlignment.center,
-                 crossAxisAlignment: CrossAxisAlignment.start,
-                 children: [
-                   Text(
-                     config.headline.isNotEmpty ? config.headline : "Festival Special",
-                     style: const TextStyle(
-                       color: Colors.white,
-                       fontSize: 22,
-                       fontWeight: FontWeight.bold,
-                       shadows: [Shadow(color: Colors.black26, blurRadius: 4)]
-                     ),
-                   ),
-                   const SizedBox(height: 8),
-                   ElevatedButton(
-                     onPressed: () {},
-                     style: ElevatedButton.styleFrom(
-                       backgroundColor: Colors.white,
-                       foregroundColor: themeCtrl.currentTheme.value.primaryColor,
-                       shape: const StadiumBorder(),
-                     ),
-                     child: const Text("Shop Now"),
-                   )
-                 ],
-               ),
-             ),
-             
-             // Simple Particle Mock (Corner Decoration)
-             Positioned(
-                top: -10,
-                right: -10,
-                child: Icon(Icons.star, color: Colors.white.withOpacity(0.3), size: 100),
-             )
+              ),
+            
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      "FESTIVAL SPECIAL",
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    config.headline.isNotEmpty ? config.headline : "Unbeatable\nFreshness",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      height: 1.1,
+                      shadows: [const Shadow(color: Colors.black26, blurRadius: 4)],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: themeCtrl.currentTheme.value.primaryColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: Text("Explore Now", style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       );
     });
+  }
+
+  Widget _buildDefaultBanner() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      height: 180,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0C831F), Color(0xFF148E28)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0C831F).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -20,
+            bottom: -20,
+            child: Opacity(
+              opacity: 0.1,
+              child: const Icon(Icons.eco_rounded, size: 200, color: Colors.white),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    "LIMITED OFFER",
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Fresh Greens\nDelivered in 10m",
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF0C831F),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: Text("Shop Fresh", style: GoogleFonts.outfit(fontWeight: FontWeight.w800)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

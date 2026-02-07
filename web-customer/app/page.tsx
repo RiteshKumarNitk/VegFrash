@@ -1,5 +1,5 @@
 import { getDeviceType } from "@/lib/device";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase"; // Use standardized helper
 import ModernHeader from "@/components/ui/ModernHeader";
 import ProductCard from "@/components/ui/ProductCard";
 import CategoryGrid from "@/components/ui/CategoryGrid";
@@ -11,11 +11,8 @@ export const revalidate = 0; // Disable cache for demo purposes
 export default async function Home() {
   const deviceType = await getDeviceType();
 
-  // Server-side fetch (using public anon key)
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Initialized standardized client
+  const supabase = createClient();
 
   // Fetch all visible products and categories
   const [productsRes, categoriesRes] = await Promise.all([
