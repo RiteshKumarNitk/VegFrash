@@ -58,8 +58,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       // 1. Create Order record
       final orderRes = await _supabase.from('orders').insert({
+        'id': "ORD-${DateTime.now().millisecondsSinceEpoch}",
         'user_id': user.id,
-        'total_amount': _cartCtrl.subtotal + 2 + 25, // Mock total calculation
+        'total_amount': _cartCtrl.subtotal + 2 + 25,
         'status': 'pending',
         'items': _cartCtrl.items.values.map((e) => {
           'id': e.id,
@@ -71,7 +72,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'payment_method': selectedPayment,
       }).select().single();
 
-      // 2. Success
+      final orderId = orderRes['id'];
+
+      // 2. Insert Order Items
+      final orderItems = _cartCtrl.items.values.map((e) => {
+        'order_id': orderId,
+        'product_id': e.id,
+        'quantity': e.quantity.value,
+        'price_at_time': e.price,
+        'unit': e.unit,
+      }).toList();
+
+      await _supabase.from('order_items').insert(orderItems);
+
+      // 3. Success
       _cartCtrl.clear();
       Get.offAll(() => const OrderSuccessScreen());
 

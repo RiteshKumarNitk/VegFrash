@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final responses = await Future.wait([
         _supabase.from('categories').select('*').order('name'),
-        _supabase.from('products').select('*').eq('is_visible', true),
+        _supabase.from('products').select('*, image_url:image').eq('in_stock', true),
       ]);
 
       if (mounted) {
@@ -110,7 +110,9 @@ class _HomeScreenState extends State<HomeScreen> {
             title: Text("My Orders", style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
             onTap: () {
               Get.back();
-              Get.to(() => MyOrdersScreen(), transition: Transition.cupertino);
+              if (_checkAuth()) {
+                Get.to(() => MyOrdersScreen(), transition: Transition.cupertino);
+              }
             },
           ),
           ListTile(
@@ -118,23 +120,40 @@ class _HomeScreenState extends State<HomeScreen> {
             title: Text("Saved Addresses", style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
             onTap: () {
               Get.back();
-              Get.to(() => AddAddressScreen(), transition: Transition.cupertino);
+              if (_checkAuth()) {
+                Get.to(() => AddAddressScreen(), transition: Transition.cupertino);
+              }
             },
           ),
           const Spacer(),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-            title: Text("Logout", style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Colors.redAccent)),
-            onTap: () async {
-              await _supabase.auth.signOut();
-              Get.offAll(() => LoginScreen());
-            },
-          ),
+          if (user != null)
+            ListTile(
+              leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+              title: Text("Logout", style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Colors.redAccent)),
+              onTap: () async {
+                await _supabase.auth.signOut();
+                Get.offAll(() => const LoginScreen());
+              },
+            )
+          else
+            ListTile(
+              leading: const Icon(Icons.login_rounded, color: Color(0xFF0C831F)),
+              title: Text("Login / Sign Up", style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: const Color(0xFF0C831F))),
+              onTap: () => Get.to(() => const LoginScreen()),
+            ),
           const SizedBox(height: 48),
         ],
       ),
     );
+  }
+
+  bool _checkAuth() {
+    if (_supabase.auth.currentUser == null) {
+      Get.to(() => const LoginScreen());
+      return false;
+    }
+    return true;
   }
 
   Widget _buildAppBar() {
@@ -190,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: const Color(0xFFF1F5F9),
           child: IconButton(
             icon: const Icon(Icons.person_outline_rounded, color: Color(0xFF1E293B)),
-            onPressed: () {},
+            onPressed: () => _checkAuth(),
           ),
         ),
         const SizedBox(width: 16),

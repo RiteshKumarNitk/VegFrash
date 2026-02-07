@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/cart_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'login_screen.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatelessWidget {
@@ -406,7 +408,13 @@ class CartScreen extends StatelessWidget {
                 ],
               ),
               child: ElevatedButton(
-                onPressed: () => Get.to(() => const CheckoutScreen(), transition: Transition.rightToLeftWithFade),
+                onPressed: () {
+                  if (Supabase.instance.client.auth.currentUser == null) {
+                    Get.to(() => const LoginScreen());
+                  } else {
+                    Get.to(() => const CheckoutScreen(), transition: Transition.rightToLeftWithFade);
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0C831F),
                   foregroundColor: Colors.white,

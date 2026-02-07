@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'home_screen.dart';
+import '../../controllers/auth_controller.dart';
 
-class OtpScreen extends StatelessWidget {
+class OtpScreen extends StatefulWidget {
   final String phone;
-  final _otpController = TextEditingController();
+  const OtpScreen({super.key, required this.phone});
 
-  OtpScreen({super.key, required this.phone});
+  @override
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
+  final _otpController = TextEditingController();
+  final _authCtrl = Get.find<AuthController>();
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +30,7 @@ class OtpScreen extends StatelessWidget {
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +60,7 @@ class OtpScreen extends StatelessWidget {
                   children: [
                     const TextSpan(text: "We've sent a 6-digit verification code to "),
                     TextSpan(
-                      text: "+91 $phone",
+                      text: "+91 ${widget.phone}",
                       style: const TextStyle(
                         color: Color(0xFF0C831F),
                         fontWeight: FontWeight.w800,
@@ -116,25 +124,45 @@ class OtpScreen extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {},
-                      child: Text(
-                        "Resend Code",
-                        style: GoogleFonts.outfit(
-                          fontSize: 14,
-                          color: const Color(0xFF0C831F),
-                          fontWeight: FontWeight.w800,
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => _authCtrl.sendOtp(phone: widget.phone, viaWhatsApp: true),
+                          icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 16),
+                          label: Text(
+                            "WhatsApp",
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              color: const Color(0xFF0C831F),
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         ),
-                      ),
+                        const Text(" or ", style: TextStyle(color: Color(0xFF94A3B8))),
+                        TextButton.icon(
+                          onPressed: () => _authCtrl.sendOtp(phone: widget.phone, viaWhatsApp: false),
+                          icon: const Icon(Icons.sms, color: Color(0xFF64748B), size: 16),
+                          label: Text(
+                            "SMS",
+                            style: GoogleFonts.outfit(
+                              fontSize: 14,
+                              color: const Color(0xFF0C831F),
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               
-              const Spacer(),
+              const SizedBox(height: 60),
               
               // Verify Button
-              SizedBox(
+              Obx(() => SizedBox(
                 width: double.infinity,
                 child: Container(
                   decoration: BoxDecoration(
@@ -148,24 +176,21 @@ class OtpScreen extends StatelessWidget {
                     ],
                   ),
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: _authCtrl.isLoading.value ? null : () async {
                       if (_otpController.text.length == 6) {
-                        // Mock Success and navigate to Home
-                        Get.offAll(
-                          () => const HomeScreen(),
-                          transition: Transition.fade,
-                          duration: const Duration(milliseconds: 600),
+                        final success = await _authCtrl.verifyOtp(
+                          phone: widget.phone,
+                          token: _otpController.text,
                         );
+                        if (success) {
+                          Get.offAll(
+                            () => const HomeScreen(),
+                            transition: Transition.fade,
+                            duration: const Duration(milliseconds: 600),
+                          );
+                        }
                       } else {
-                        Get.snackbar(
-                          "Incomplete Code", 
-                          "Please enter the 6-digit verification code",
-                          snackPosition: SnackPosition.TOP,
-                          backgroundColor: Colors.amber,
-                          colorText: Colors.black,
-                          margin: const EdgeInsets.all(20),
-                          borderRadius: 15,
-                        );
+                        Get.snackbar("Incomplete Code", "Please enter the 6-digit verification code");
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -175,16 +200,18 @@ class OtpScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
                       elevation: 0,
                     ),
-                    child: Text(
-                      "Verify & Login",
-                      style: GoogleFonts.outfit(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                    child: _authCtrl.isLoading.value
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : Text(
+                          "Verify & Login",
+                          style: GoogleFonts.outfit(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                   ),
                 ),
-              ),
+              )),
               
               const SizedBox(height: 24),
             ],

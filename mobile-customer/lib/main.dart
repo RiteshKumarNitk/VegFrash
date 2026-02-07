@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'controllers/theme_controller.dart';
-import 'ui/screens/login_screen.dart';
-
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'controllers/theme_controller.dart';
+import 'controllers/cart_controller.dart';
+import 'controllers/auth_controller.dart';
+import 'ui/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,15 +27,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inject Controller
+    // Inject Controllers
     final themeCtrl = Get.put(ThemeController());
+    Get.put(AuthController());
+    Get.put(CartController());
 
     return Obx(() {
       return GetMaterialApp(
         title: 'VegFrash',
         debugShowCheckedModeBanner: false,
         theme: themeCtrl.currentTheme.value,
-        home: LoginScreen(),
+        home: const HomeScreen(),
       );
     });
   }
