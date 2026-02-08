@@ -9,6 +9,7 @@ import {
     FileDown
 } from 'lucide-react';
 import { generateInvoice } from '@/lib/invoice';
+import { toast } from 'sonner';
 
 // REMOVE: const supabaseUrl = ...
 // REMOVE: const supabaseAnonKey = ...

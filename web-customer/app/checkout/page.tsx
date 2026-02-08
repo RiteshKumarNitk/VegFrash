@@ -151,7 +151,14 @@ export default function CheckoutPage() {
                 delivery_slot: selectedSlot ? `${selectedSlot.label} (${selectedSlot.time})` : 'Standard'
             }).select().single();
 
-            if (orderError) throw orderError;
+            if (orderError) {
+                console.error("Supabase Order Insert Error:", orderError);
+                throw new Error(`Order Creation Failed: ${orderError.message} (${orderError.details || 'No details'})`);
+            }
+
+            if (!order) {
+                throw new Error("Order creation failed: No data returned from database.");
+            }
 
             // 2. Insert Order Items
             const orderItems = items.map(item => ({
@@ -165,8 +172,8 @@ export default function CheckoutPage() {
             const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
 
             if (itemsError) {
-                console.warn("Items insert failed:", itemsError);
-                throw itemsError; // Throw to catch block to alert user
+                console.error("Order Items Insert Error:", itemsError);
+                throw new Error(`Item Insertion Failed: ${itemsError.message}`);
             }
 
             // Success
@@ -174,8 +181,10 @@ export default function CheckoutPage() {
             setOrderComplete(true);
 
         } catch (err: any) {
-            console.error(err);
-            alert("Order Error: " + (err.message || JSON.stringify(err)));
+            console.error("Checkout Process Error:", err);
+            // Handle standard Error objects properly
+            const msg = err instanceof Error ? err.message : (err.message || JSON.stringify(err));
+            alert("Order Error: " + msg);
         } finally {
             setPlacing(false);
         }
