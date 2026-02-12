@@ -15,6 +15,10 @@ void main() async {
   // Load environment variables
   await dotenv.load(fileName: "assets/.env");
   
+  debugPrint("Supabase URL: ${dotenv.env['SUPABASE_URL']?.substring(0, 10)}...");
+  debugPrint("Supabase Anon Key: ${dotenv.env['SUPABASE_ANON_KEY']?.substring(0, 10)}...");
+  
+  // Initialize Supabase
   // Initialize Supabase
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,

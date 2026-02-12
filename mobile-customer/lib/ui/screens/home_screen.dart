@@ -110,7 +110,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 FestivalBanner(),
                 const SizedBox(height: 32),
                 _buildSectionHeader("Explore By Categories"),
-                isLoading ? _buildCategoryShimmer() : _buildCategoryList(),
+                isLoading 
+                  ? _buildCategoryShimmer() 
+                  : errorMessage != null
+                    ? Center(child: Text("Unable to load categories", style: GoogleFonts.outfit()))
+                    : categories.isEmpty
+                      ? Center(child: Text("No categories found", style: GoogleFonts.outfit()))
+                      : _buildCategoryList(),
                 const SizedBox(height: 20),
                 _buildOfferPill(),
                 const SizedBox(height: 100), // Bottom padding for cart summary

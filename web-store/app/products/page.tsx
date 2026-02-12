@@ -25,6 +25,8 @@ type Product = {
     discount_config: { type: string, value: number, label: string } | null;
     tags: string[];
     customer_rating: number;
+    return_rate?: number;
+    sales_velocity?: number;
 };
 
 const DEFAULT_PRODUCT: Partial<Product> = {
@@ -231,8 +233,8 @@ export default function ProductsPage() {
                         {/* Filter Pills */}
                         <div className="flex gap-2">
                             <FilterPill label="Low Stock" count={products.filter(p => (p.total_stock - p.reserved_stock) < 10).length} color="amber" />
-                            <FilterPill label="High Returns" count={products.filter(p => p.return_rate > 5).length} color="red" />
-                            <FilterPill label="Top Sellers" count={products.filter(p => p.sales_velocity > 10).length} color="green" />
+                            <FilterPill label="High Returns" count={products.filter(p => (p.return_rate || 0) > 5).length} color="red" />
+                            <FilterPill label="Top Sellers" count={products.filter(p => (p.sales_velocity || 0) > 10).length} color="green" />
                         </div>
                     </div>
 

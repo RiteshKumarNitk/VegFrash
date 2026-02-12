@@ -68,7 +68,9 @@ class _CategoryBrowserScreenState extends State<CategoryBrowserScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF3C0B69)))
-          : Row(
+          : categories.isEmpty 
+            ? Center(child: Text("No categories found", style: GoogleFonts.outfit()))
+            : Row(
               children: [
                 // Left Column: Categories
                 Container(

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
-import { Search, Filter, Loader2 } from 'lucide-react';
+import { Search, Filter, Loader2, RefreshCw } from 'lucide-react';
 
 type Batch = {
     id: string;

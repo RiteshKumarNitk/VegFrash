@@ -28,6 +28,7 @@ type Order = {
     address_type: string;
     delivery_address?: any;
     note?: string;
+    rider?: { id: string; full_name: string };
 };
 
 export default function OrdersPage() {
@@ -127,7 +128,7 @@ export default function OrdersPage() {
         setLoading(false);
     };
 
-    const transformStatusToStage = (status: string) => {
+    const transformStatusToStage = (status: string): Order['order_stage'] => {
         const s = status?.toLowerCase() || '';
         if (s === 'placed' || s === 'pending') return 'new_request';
         if (s === 'confirmed' || s === 'picking') return 'confirmed';
@@ -837,9 +838,9 @@ ${selectedOrder.items.map((i: any) => `- ${i.name} (${i.weight}) x${i.quantity}`
                                             <td className="border border-black p-2 font-mono">{o.id.slice(0, 6)}</td>
                                             <td className="border border-black p-2">
                                                 <div className="font-bold">{o.customer_name}</div>
-                                                <div className="text-[10px]">{typeof o.delivery_address_snapshot === 'string' ? JSON.parse(o.delivery_address_snapshot)?.full_address_text : o.delivery_address?.full_address_text}</div>
+                                                <div className="text-[10px]">{o.delivery_address?.full_address_text}</div>
                                             </td>
-                                            <td className="border border-black p-2 font-mono">{typeof o.delivery_address_snapshot === 'string' ? JSON.parse(o.delivery_address_snapshot)?.receiver_phone : o.delivery_address?.receiver_phone}</td>
+                                            <td className="border border-black p-2 font-mono">{o.delivery_address?.receiver_phone}</td>
                                             <td className="border border-black p-2 text-right font-bold">₹{o.total}</td>
                                             <td className="border border-black p-2"></td>
                                         </tr>

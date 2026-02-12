@@ -53,7 +53,7 @@ export default function SalesTrendChart({ data }: { data: SalesData[] }) {
                             fontWeight: 'bold'
                         }}
                         itemStyle={{ color: '#059669' }}
-                        formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Sales']}
+                        formatter={(value: any) => [`₹${value.toLocaleString()}`, 'Sales']}
                     />
                     <Area
                         type="monotone"
