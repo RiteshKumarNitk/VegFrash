@@ -12,31 +12,33 @@ export async function middleware(request: NextRequest) {
 
     // Create a simple Supabase client for the server (Middleware context)
     // Note: Middleware runs on Edge, so ensure Supabase client is compatible
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return request.cookies.getAll()
-                },
-                setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    })
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        response.cookies.set(name, value, options)
-                    )
-                },
-            },
-        }
-    )
-
-    // Fetch active theme from site_settings (Unified Settings System)
+    // Create a simple Supabase client for the server (Middleware context)
+    // Note: Middleware runs on Edge, so ensure Supabase client is compatible
     try {
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() {
+                        return request.cookies.getAll()
+                    },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                        response = NextResponse.next({
+                            request: {
+                                headers: request.headers,
+                            },
+                        })
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            response.cookies.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        )
+
+        // Fetch active theme from site_settings (Unified Settings System)
         const { data: themeSetting } = await supabase
             .from('site_settings')
             .select('value')
@@ -57,7 +59,8 @@ export async function middleware(request: NextRequest) {
         }
 
     } catch (e) {
-        // Fallback on error
+        // Fallback on error (or missing env vars)
+        console.error("Middleware Supabase Error (Check Env Vars):", e);
         response.headers.set('X-Theme-Primary', '#0C831F')
     }
 

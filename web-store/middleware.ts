@@ -9,34 +9,37 @@ export async function middleware(request: NextRequest) {
     })
 
     // Create a Supabase client configured to use cookies
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                getAll() {
-                    return request.cookies.getAll()
-                },
-                setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-                    response = NextResponse.next({
-                        request,
-                    })
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        response.cookies.set(name, value, options)
-                    )
-                },
-            },
-        }
-    )
+    // Wrapped in try/catch to prevent 500 error on Vercel if env vars are missing
+    let user = null;
 
-    // Get User with safety
-    let user = null
     try {
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() {
+                        return request.cookies.getAll()
+                    },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                        response = NextResponse.next({
+                            request,
+                        })
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            response.cookies.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        )
+
+        // Get User with safety
         const { data } = await supabase.auth.getUser()
         user = data?.user
+
     } catch (e) {
-        console.error("Middleware fetch failed. This usually means a network issue or Supabase project is paused.")
+        console.error("Middleware fetch failed. This usually means a network issue or Supabase project is paused/missing env vars.", e)
     }
 
     // Guard Routes
