@@ -4,20 +4,35 @@ import { NextResponse, type NextRequest } from 'next/server'
 // We will simply fetch logic here.
 
 export async function middleware(request: NextRequest) {
-    let response = NextResponse.next({
+    const response = NextResponse.next({
         request: {
             headers: request.headers,
         },
     })
 
-    // Create a simple Supabase client for the server (Middleware context)
-    // Note: Middleware runs on Edge, so ensure Supabase client is compatible
-    // Create a simple Supabase client for the server (Middleware context)
-    // Note: Middleware runs on Edge, so ensure Supabase client is compatible
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    // Verify if the key is a valid JWT (Supabase keys always are)
+    const isJwt = supabaseAnonKey?.startsWith('eyJ') && supabaseAnonKey?.split('.').length === 3;
+
+    // Fail-safe: if variables are missing or not a JWT, don't crash, just serve default theme
+    if (!supabaseUrl || !supabaseAnonKey || !isJwt) {
+        if (supabaseAnonKey && !isJwt) {
+            console.warn("Middleware: Non-JWT key detected (likely InsForge). Skipping Supabase initialization to prevent crash.");
+        } else {
+            console.warn("Middleware: Missing Supabase environment variables. Serving default theme.")
+        }
+        response.headers.set('X-Theme-Primary', '#0C831F')
+        response.headers.set('X-Theme-Gradient', 'from-orange-500 via-red-500 to-yellow-500')
+        response.headers.set('X-Theme-Festival', 'false')
+        return response
+    }
+
     try {
         const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            supabaseUrl,
+            supabaseAnonKey,
             {
                 cookies: {
                     getAll() {
@@ -25,20 +40,20 @@ export async function middleware(request: NextRequest) {
                     },
                     setAll(cookiesToSet) {
                         cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-                        response = NextResponse.next({
+                        const freshResponse = NextResponse.next({
                             request: {
                                 headers: request.headers,
                             },
                         })
                         cookiesToSet.forEach(({ name, value, options }) =>
-                            response.cookies.set(name, value, options)
+                            freshResponse.cookies.set(name, value, options)
                         )
                     },
                 },
             }
         )
 
-        // Fetch active theme from site_settings (Unified Settings System)
+        // Fetch active theme from site_settings
         const { data: themeSetting } = await supabase
             .from('site_settings')
             .select('value')
@@ -52,15 +67,13 @@ export async function middleware(request: NextRequest) {
             response.headers.set('X-Theme-Gradient', themeConfig.gradient || 'from-orange-500 via-red-500 to-yellow-500')
             response.headers.set('X-Theme-Festival', themeConfig.festival_mode ? 'true' : 'false')
         } else {
-            // Fallback default (VegFrash Green)
             response.headers.set('X-Theme-Primary', '#0C831F')
             response.headers.set('X-Theme-Gradient', 'from-orange-500 via-red-500 to-yellow-500')
             response.headers.set('X-Theme-Festival', 'false')
         }
 
     } catch (e) {
-        // Fallback on error (or missing env vars)
-        console.error("Middleware Supabase Error (Check Env Vars):", e);
+        console.error("Middleware Supabase Error:", e);
         response.headers.set('X-Theme-Primary', '#0C831F')
     }
 
