@@ -1,0 +1,8 @@
+{
+    "name": "vegfrash-root",
+    "private": true,
+    "workspaces": [
+        "web-customer",
+        "web-store"
+    ]
+}
