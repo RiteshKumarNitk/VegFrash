@@ -2,7 +2,6 @@
 
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import { Toaster } from 'sonner';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();

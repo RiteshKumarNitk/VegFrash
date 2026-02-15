@@ -9,18 +9,19 @@ export default function ThemesPage() {
     const supabase = createClient();
 
     useEffect(() => {
+        const fetchSettings = async () => {
+            const { data } = await supabase.from('site_settings').select('*');
+            if (data) {
+                const map: Record<string, any> = {};
+                data.forEach((item: any) => {
+                    map[item.key] = item.value;
+                });
+                setSettings(map);
+            }
+            setLoading(false);
+        };
         fetchSettings();
-    }, []);
-
-    const fetchSettings = async () => {
-        const { data } = await supabase.from('site_settings').select('*');
-        if (data) {
-            const map: any = {};
-            data.forEach((item: any) => map[item.key] = item.value);
-            setSettings(map);
-        }
-        setLoading(false);
-    };
+    }, [supabase]);
 
     const handleSave = async () => {
         // Upsert all keys

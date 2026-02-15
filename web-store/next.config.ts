@@ -1,11 +1,10 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // @ts-ignore
   turbopack: {
-    // Force Turbopack to stay within this directory
-    root: __dirname
+    root: path.resolve(__dirname, "..")
   }
 };
 

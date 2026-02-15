@@ -1,11 +1,10 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // @ts-ignore
   turbopack: {
-    // Force Turbopack to stay within this folder to avoid finding global node_modules
-    root: __dirname
+    root: path.resolve(__dirname, "..")
   }
 };
 
