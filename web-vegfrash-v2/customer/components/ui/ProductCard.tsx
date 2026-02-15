@@ -130,7 +130,7 @@ export default function ProductCard({ id, name, weight, price, old_price, oldPri
                         ADD
                     </button>
                 ) : (
-                    <div className="flex items-center bg-green-600 text-white rounded-lg h-9 shadow-md animate-scale-in overflow-hidden">
+                    <div className="flex items-center bg-brand text-white rounded-lg h-9 shadow-md animate-scale-in overflow-hidden">
                         <button onClick={handleDecrement} className="w-8 h-full flex items-center justify-center hover:bg-black/20 active:bg-black/40 transition-colors">
                             <Minus size={14} strokeWidth={3} />
                         </button>

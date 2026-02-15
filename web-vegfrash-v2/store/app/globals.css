@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: var(--theme-primary, #0C831F);
+  --color-brand-dark: var(--theme-primary-dark, #096317);
+  --color-brand-light: var(--theme-primary-light, #E6F3E8);
+  --color-brand-accent: var(--theme-secondary, #FFD700);
+
+  --color-slate-50: #F5F7FD;
+
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-marquee: marquee 25s linear infinite;
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+
+/* Dark mode removed to enforce light theme */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}

@@ -33,12 +33,13 @@ export default function Sidebar() {
     return (
         <aside className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col fixed left-0 top-0 z-50">
             <div className="p-6 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                        V
+                <div className="flex items-center gap-2 group">
+                    <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center text-white text-xl shadow-lg shadow-brand/20 group-hover:scale-105 transition-transform">
+                        🍃
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold text-slate-800 tracking-tight">VegFrash <span className="text-slate-400 font-normal">Store</span></h1>
+                        <h1 className="text-lg font-bold text-slate-800 tracking-tight">Veg<span className="text-brand">Frash</span></h1>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest -mt-1">Store Ops</p>
                     </div>
                 </div>
             </div>
@@ -61,10 +62,10 @@ export default function Sidebar() {
                                         : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                                 )}
                             >
-                                <Icon size={18} className={cn("transition-colors", isActive ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-600")} />
+                                <Icon size={18} className={cn("transition-colors", isActive ? "text-brand" : "text-slate-400 group-hover:text-slate-600")} />
                                 <span className="font-medium text-sm flex-1">{item.label}</span>
                                 {item.badge && (
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                                 )}
                             </Link>
                         );
