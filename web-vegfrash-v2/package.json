@@ -1,8 +1,0 @@
-{
-    "name": "vegfrash-v2-monorepo",
-    "private": true,
-    "workspaces": [
-        "customer",
-        "store"
-    ]
-}
